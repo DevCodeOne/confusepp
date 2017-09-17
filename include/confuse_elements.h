@@ -10,18 +10,17 @@
 #include <memory>
 #include <vector>
 
-class cfg_opt {
-    public:
-        cfg_opt(cfg_opt_t opt);
-        cfg_opt() = default;
+class confuse_section_flags {
 
-        cfg_opt_t value();
-    private:
-        cfg_opt_t m_opt;
+};
+
+class confuse_element_flags {
+
 };
 
 // TODO complete implementation (operators and constructors)
 // also add the other datatypes
+// replace std::string with const char * and cast this to std::string_view somehow
 class confuse_element final {
     public:
         using value_type = std::variant<int, float, bool, std::string>;

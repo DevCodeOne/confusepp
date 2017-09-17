@@ -7,12 +7,12 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 add_definitions(-std=c++1z)
 
 include_directories(include)
-file(GLOB SOURCE "src/*cpp" "include/*h")
+file(GLOB SOURCES "src/*cpp" "include/*h")
 
 find_package(Confuse)
 
 include_directories(${CONFUSE_INCLUDE_DIR})
 
-add_executable(confusepp ${SOURCE})
+add_executable(confusepp examples/example_main.cpp ${SOURCES})
 
 target_link_libraries(confusepp ${CONFUSE_LIBRARIES})
