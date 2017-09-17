@@ -18,6 +18,8 @@ class confuse_element_flags {
 
 };
 
+class confuse_section;
+
 // TODO complete implementation (operators and constructors)
 // also add the other datatypes
 // replace std::string with const char * and cast this to std::string_view somehow
@@ -32,20 +34,15 @@ class confuse_element final {
             }
 
         const std::string &identifier() const;
+        const value_type &value() const;
 
-        template<typename T>
-            bool holds_type() const {
-                return std::holds_alternative<T>(m_value);
-            }
-
-        template<typename T>
-            const T &as() const {
-                return std::get<T>(m_value);
-            }
     private:
         cfg_opt_t get_confuse_representation() const;
+        void parent(const confuse_section *parent);
+        const confuse_section *parent() const;
 
-        std::variant<int, float, bool, std::string> m_value;
+        mutable std::variant<int, float, bool, std::string> m_value;
+        const confuse_section *m_parent = nullptr;
         const bool m_optional;
         const std::string m_identifier;
 
@@ -66,11 +63,19 @@ class confuse_section {
         virtual ~confuse_section() = default;
     protected:
         cfg_opt_t get_confuse_representation(std::vector<std::unique_ptr<cfg_opt_t []>> &opt_storage) const;
+        void parent(const confuse_section *parent);
+        const confuse_section *parent() const;
+        virtual cfg_t *section_handle() const;
     private:
 
         std::map<std::string, variant_type> m_values;
+        const confuse_section *m_parent = nullptr;
+
         const bool m_optional;
         const std::string m_identifier;
+
+        friend class confuse_root;
+        friend class confuse_element;
 };
 
 // TODO complete implementation (operators and constructors)
