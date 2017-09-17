@@ -13,6 +13,8 @@ find_package(Confuse)
 
 include_directories(${CONFUSE_INCLUDE_DIR})
 
-add_executable(confusepp examples/example_main.cpp ${SOURCES})
+add_library(confusepp ${SOURCES})
+add_executable(example_main examples/example_main.cpp)
 
 target_link_libraries(confusepp ${CONFUSE_LIBRARIES})
+target_link_libraries(example_main confusepp)

@@ -15,7 +15,7 @@ int main() {
                 })
             };
 
-    auto config = confuse_config::parse_config("testconf/test.conf", root);
+    auto config = confuse_config::parse_config("tests/test.conf", root);
 
     if (config) {
         // config is valid
