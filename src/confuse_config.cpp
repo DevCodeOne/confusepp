@@ -1,3 +1,6 @@
+#include <iostream>
+#include <utility>
+
 #include <memory>
 
 #include "confuse_config.h"
@@ -9,10 +12,11 @@ std::optional<confuse_config> confuse_config::parse_config(const std::string &fi
 
     if (config_file) {
         confuse_config config(std::move(root));
-        cfg_t *config_handle = cfg_init(root.get_confuse_representation(config.m_opt_storage).subopts, CFGF_NONE);
+        cfg_opt_t config_structure = config.root_node().get_confuse_representation(config.m_opt_storage);
+        cfg_t *config_handle = cfg_init(config_structure.subopts, CFGF_NONE);
 
-        if (config_handle
-                && cfg_parse_fp(config_handle, config_file.get()) == CFG_SUCCESS) {
+        if (config_handle && cfg_parse_fp(config_handle, config_file.get()) == CFG_SUCCESS) {
+            config.config_handle(config_handle);
             return std::optional<confuse_config>{std::move(config)};
         }
     }
@@ -28,10 +32,22 @@ confuse_config::confuse_config(confuse_config &&config)
     : m_config_handle(std::move(config.m_config_handle)),
     m_config_tree(std::move(config.m_config_tree)),
     m_opt_storage(std::move(config.m_opt_storage)) {
+        config.m_config_handle = nullptr;
 }
 
 confuse_config::~confuse_config() {
-    cfg_free(m_config_handle);
+    if (m_config_handle) {
+        cfg_free(m_config_handle);
+    }
+}
+
+void confuse_config::config_handle(cfg_t *config_handle) {
+    m_config_handle = config_handle;
+    m_config_tree.config_handle(m_config_handle);
+}
+
+const confuse_root &confuse_config::root_node() const {
+    return m_config_tree;
 }
 
 const cfg_t *confuse_config::config_handle() const {

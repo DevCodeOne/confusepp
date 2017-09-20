@@ -30,12 +30,17 @@ class confuse_element final {
         template<typename T>
             confuse_element(const std::string &identifier,
                     const T &default_value = {}, bool optional = false)
-            : m_value(default_value), m_optional(optional), m_identifier(identifier) {
+            : m_value(default_value), m_optional(optional),
+            m_identifier(identifier) {
             }
+        confuse_element(const confuse_element &element);
+        confuse_element(confuse_element &&element);
+
+        confuse_element &operator=(const confuse_element &element) = delete;
+        confuse_element &operator=(confuse_element &&element) = delete;
 
         const std::string &identifier() const;
         const value_type &value() const;
-
     private:
         cfg_opt_t get_confuse_representation() const;
         void parent(const confuse_section *parent);
@@ -54,15 +59,21 @@ class confuse_element final {
 class confuse_section {
     public:
         using variant_type = std::variant<confuse_section, confuse_element>;
+        using option_storage = std::vector<std::unique_ptr<cfg_opt_t []>>;
 
         confuse_section(const std::string &identifier,
                 const std::initializer_list<variant_type> &values,
                 bool optional = false);
+        confuse_section(const confuse_section &section);
+        confuse_section(confuse_section &&section);
+
         const std::string &identifier() const;
         const variant_type &operator[](const std::string &identifier) const;
+        confuse_section &operator=(const confuse_section &section) = delete;
+        confuse_section &operator=(confuse_section &&section) = delete;
         virtual ~confuse_section() = default;
     protected:
-        cfg_opt_t get_confuse_representation(std::vector<std::unique_ptr<cfg_opt_t []>> &opt_storage) const;
+        cfg_opt_t get_confuse_representation(option_storage &opt_storage) const;
         void parent(const confuse_section *parent);
         const confuse_section *parent() const;
         virtual cfg_t *section_handle() const;
@@ -82,10 +93,19 @@ class confuse_section {
 class confuse_root final : public confuse_section {
     public:
         confuse_root(const std::initializer_list<variant_type> &values);
+        confuse_root(const confuse_root &root);
+        confuse_root(confuse_root &&root);
+
         virtual ~confuse_root() = default;
 
+        void config_handle(cfg_t *config_handle);
+        virtual cfg_t *section_handle() const;
+
+        confuse_root &operator=(const confuse_root &root) = delete;
+        confuse_root &operator=(confuse_root &&root) = delete;
         explicit operator bool() const;
     private:
+        cfg_t *m_section_handle = nullptr;
 
         friend class confuse_config;
 };
