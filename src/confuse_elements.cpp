@@ -44,26 +44,6 @@ cfg_opt_t confuse_element::get_confuse_representation() const {
     return ret;
 }
 
-// TODO correct datatypes and add missing ones
-const confuse_element::value_type &confuse_element::value() const {
-    auto &stored_value = m_value;
-    cfg_t *parent = m_parent->section_handle();
-
-    if (parent) {
-        if (std::holds_alternative<int>(stored_value)) {
-            stored_value = value_type((int) cfg_getint(parent, m_identifier.c_str()));
-        } else if (std::holds_alternative<float>(stored_value)) {
-            stored_value = value_type((float) cfg_getfloat(parent, m_identifier.c_str()));
-        } else if (std::holds_alternative<bool>(stored_value)) {
-            stored_value = cfg_getbool(parent, m_identifier.c_str());
-        } else if (std::holds_alternative<std::string>(stored_value)) {
-            stored_value = std::string(cfg_getstr(parent, m_identifier.c_str()));
-        }
-    }
-
-    return stored_value;
-}
-
 void confuse_element::parent(const confuse_section *parent) {
     m_parent = parent;
 }

@@ -21,11 +21,11 @@ int main() {
         std::cout << "Config is valid" << std::endl;
 
         auto &root_node = config->root_node();
-        std::cout << std::get<int>(std::get<confuse_element>(root_node["int_value"]).value()) << std::endl;
+        std::cout << root_node.get<confuse_element>("int_value").value<int>() << std::endl;
 
-        auto &string_section = std::get<confuse_section>(root_node["string_section"]);
+        auto &string_section = root_node.get<confuse_section>("string_section");
 
-        std::cout << std::get<std::string>(std::get<confuse_element>(string_section["string_identifier"]).value()) << std::endl;
+        std::cout << std::get<confuse_element>(string_section["string_identifier"]).value<std::string>() << std::endl;
 
     }
 }

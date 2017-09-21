@@ -2,12 +2,12 @@
 
 #include <confuse.h>
 
-#include <map>
 #include <istream>
 #include <ostream>
+#include <map>
+#include <memory>
 #include <tuple>
 #include <variant>
-#include <memory>
 #include <vector>
 
 class confuse_section_flags {
@@ -28,11 +28,8 @@ class confuse_element final {
         using value_type = std::variant<int, float, bool, std::string>;
 
         template<typename T>
-            confuse_element(const std::string &identifier,
-                    const T &default_value = {}, bool optional = false)
-            : m_value(default_value), m_optional(optional),
-            m_identifier(identifier) {
-            }
+        confuse_element(const std::string &identifier, const T &default_value = {},
+                bool optional = false);
         confuse_element(const confuse_element &element);
         confuse_element(confuse_element &&element);
 
@@ -40,7 +37,8 @@ class confuse_element final {
         confuse_element &operator=(confuse_element &&element) = delete;
 
         const std::string &identifier() const;
-        const value_type &value() const;
+        template<typename T>
+        const T &value() const;
     private:
         cfg_opt_t get_confuse_representation() const;
         void parent(const confuse_section *parent);
@@ -52,7 +50,6 @@ class confuse_element final {
         const std::string m_identifier;
 
         friend class confuse_section;
-        friend class confuse_root;
 };
 
 // TODO complete implementation (operators and constructors)
@@ -66,12 +63,14 @@ class confuse_section {
                 bool optional = false);
         confuse_section(const confuse_section &section);
         confuse_section(confuse_section &&section);
+        virtual ~confuse_section() = default;
 
         const std::string &identifier() const;
         const variant_type &operator[](const std::string &identifier) const;
+        template<typename T>
+        const T &get(const std::string &identifier) const;
         confuse_section &operator=(const confuse_section &section) = delete;
         confuse_section &operator=(confuse_section &&section) = delete;
-        virtual ~confuse_section() = default;
     protected:
         cfg_opt_t get_confuse_representation(option_storage &opt_storage) const;
         void parent(const confuse_section *parent);
@@ -85,7 +84,6 @@ class confuse_section {
         const bool m_optional;
         const std::string m_identifier;
 
-        friend class confuse_root;
         friend class confuse_element;
 };
 
@@ -109,6 +107,38 @@ class confuse_root final : public confuse_section {
 
         friend class confuse_config;
 };
+
+// TODO correct datatypes and add missing ones
+template<typename T>
+const T &confuse_element::value() const {
+    auto &stored_value = m_value;
+    cfg_t *parent = m_parent->section_handle();
+
+    if (parent) {
+        if (std::holds_alternative<int>(stored_value)) {
+            stored_value = value_type((int) cfg_getint(parent, m_identifier.c_str()));
+        } else if (std::holds_alternative<float>(stored_value)) {
+            stored_value = value_type((float) cfg_getfloat(parent, m_identifier.c_str()));
+        } else if (std::holds_alternative<bool>(stored_value)) {
+            stored_value = cfg_getbool(parent, m_identifier.c_str());
+        } else if (std::holds_alternative<std::string>(stored_value)) {
+            stored_value = std::string(cfg_getstr(parent, m_identifier.c_str()));
+        }
+    }
+
+    return std::get<T>(stored_value);
+}
+
+template<typename T>
+confuse_element::confuse_element(const std::string &identifier, const T &default_value, bool optional)
+    : m_value(default_value), m_optional(optional), m_identifier(identifier) {
+}
+
+template<typename T>
+const T &confuse_section::get(const std::string &identifier) const {
+    return std::get<T>(this->operator[](identifier));
+}
+
 
 template<typename T>
 confuse_element confuse_value(const std::string &identifier, const T &default_value = {}, bool optional = false) {
