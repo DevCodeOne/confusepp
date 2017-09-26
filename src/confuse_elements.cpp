@@ -158,7 +158,6 @@ cfg_t *confuse_section::section_handle() const {
     return cfg_getsec(m_parent->section_handle(), m_identifier.c_str());
 }
 
-// Some sort of safety so no exception gets thrown
 const confuse_section::variant_type &confuse_section::operator[](const std::string &identifier) const {
     return m_values.at(identifier);
 }

@@ -130,6 +130,11 @@ class confuse_root final : public confuse_section {
         friend class confuse_config;
 };
 
+template<typename T>
+void swap(confuse_list<T> &lhs, confuse_list<T> &rhs) {
+    lhs.swap(rhs);
+}
+
 // TODO create specialization for std::string
 template<typename T>
 confuse_list<T>::confuse_list(const std::initializer_list<T> &values)
@@ -270,7 +275,7 @@ confuse_element::confuse_element(const std::string &identifier, const T &default
 
 template<typename T>
 const T &confuse_section::get(const std::string &identifier) const {
-    return std::get<T>(this->operator[](identifier));
+    return std::get<T>(operator[](identifier));
 }
 
 
