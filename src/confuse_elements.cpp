@@ -22,10 +22,12 @@ const std::string &confuse_element::identifier() const {
 
 // TODO handle callbacks and the like also handle last case differently.
 // Remember to add flags somehow
+// also add default value to lists
+// The char buffer that gets passed to CFG_*_LIST won't get changed
 cfg_opt_t confuse_element::get_confuse_representation() const {
     cfg_opt_t ret;
 
-    auto stored_value = m_value;
+    auto &stored_value = m_value;
 
     if (std::holds_alternative<int>(stored_value)) {
         cfg_opt_t tmp = CFG_INT(m_identifier.c_str(), std::get<int>(m_value), CFGF_NONE);
@@ -38,6 +40,26 @@ cfg_opt_t confuse_element::get_confuse_representation() const {
         ret = tmp;
     } else if (std::holds_alternative<std::string>(stored_value)) {
         cfg_opt_t tmp = CFG_STR(m_identifier.c_str(), std::get<std::string>(m_value).c_str(), CFGF_NONE);
+        ret = tmp;
+    } else if (std::holds_alternative<confuse_list<int>>(stored_value)) {
+        cfg_opt_t tmp = CFG_INT_LIST(m_identifier.c_str(),
+                std::get<confuse_list<int>>(stored_value).default_value(),
+                CFGF_NONE | CFGF_LIST);
+        ret = tmp;
+    } else if (std::holds_alternative<confuse_list<float>>(stored_value)) {
+        cfg_opt_t tmp = CFG_FLOAT_LIST(m_identifier.c_str(),
+                std::get<confuse_list<float>>(stored_value).default_value(),
+                CFGF_NONE | CFGF_LIST);
+        ret = tmp;
+    } else if (std::holds_alternative<confuse_list<bool>>(stored_value)) {
+        cfg_opt_t tmp = CFG_BOOL_LIST(m_identifier.c_str(),
+                std::get<confuse_list<bool>>(stored_value).default_value(),
+                CFGF_NONE | CFGF_LIST);
+        ret = tmp;
+    } else if (std::holds_alternative<confuse_list<std::string>>(stored_value)) {
+        cfg_opt_t tmp = CFG_STR_LIST(m_identifier.c_str(),
+                std::get<confuse_list<std::string>>(stored_value).default_value(),
+                CFGF_NONE | CFGF_LIST);
         ret = tmp;
     }
 

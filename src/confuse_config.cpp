@@ -32,7 +32,7 @@ confuse_config::confuse_config(confuse_config &&config)
     : m_config_handle(std::move(config.m_config_handle)),
     m_config_tree(std::move(config.m_config_tree)),
     m_opt_storage(std::move(config.m_opt_storage)) {
-        config.m_config_handle = nullptr;
+    config.m_config_handle = nullptr;
 }
 
 confuse_config::~confuse_config() {
