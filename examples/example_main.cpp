@@ -1,7 +1,6 @@
 #include <iostream>
 
-#include "confuse_elements.h"
-#include "confuse_config.h"
+#include "confusepp.h"
 
 int main() {
     auto root =
