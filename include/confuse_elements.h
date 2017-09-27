@@ -31,13 +31,13 @@ class confuse_list final : public std::vector<T> {
         confuse_list(const std::initializer_list<T> &values = {});
         confuse_list(const confuse_list &list);
         confuse_list(confuse_list &&list);
-        const char *default_value() const;
-        char *default_value();
-
-        confuse_list &operator=(confuse_list list);
+        virtual ~confuse_list() = default;
 
         void swap(confuse_list &other);
-        virtual ~confuse_list() = default;
+        char *default_value();
+        const char *default_value() const;
+
+        confuse_list &operator=(confuse_list list);
     private:
         size_t m_buffer_size = 0;
         std::unique_ptr<char[]> m_default_value_buf = nullptr;
@@ -45,7 +45,6 @@ class confuse_list final : public std::vector<T> {
 
 class confuse_section;
 
-// Add some sort of mechanism for the default value of lists (string)
 class confuse_element final {
     public:
         using value_type = std::variant<int, float, bool, std::string,
@@ -59,6 +58,7 @@ class confuse_element final {
 
         confuse_element &operator=(const confuse_element &element) = delete;
         confuse_element &operator=(confuse_element &&element) = delete;
+        ~confuse_element() = default;
 
         const std::string &identifier() const;
         template<typename T>
@@ -91,6 +91,7 @@ class confuse_section {
         const variant_type &operator[](const std::string &identifier) const;
         template<typename T>
         const T &get(const std::string &identifier) const;
+
         confuse_section &operator=(const confuse_section &section) = delete;
         confuse_section &operator=(confuse_section &&section) = delete;
     protected:
@@ -115,7 +116,6 @@ class confuse_root final : public confuse_section {
         confuse_root(const std::initializer_list<variant_type> &values);
         confuse_root(const confuse_root &root);
         confuse_root(confuse_root &&root);
-
         virtual ~confuse_root() = default;
 
         void config_handle(cfg_t *config_handle);
@@ -206,11 +206,15 @@ void confuse_list<T>::swap(confuse_list &other) {
     swap(m_default_value_buf, other.m_default_value_buf);
 }
 
-// TODO correct datatypes and add missing ones
-// remove duplicated code somehow
+// TODO Add missing datatypes
 template<typename T>
 const T &confuse_element::value() const {
     auto &stored_value = m_value;
+
+    if (!m_parent) {
+        return std::get<T>(stored_value);
+    }
+
     cfg_t *parent = m_parent->section_handle();
 
     if (parent) {
@@ -222,46 +226,32 @@ const T &confuse_element::value() const {
             stored_value = cfg_getbool(parent, m_identifier.c_str());
         } else if (std::holds_alternative<std::string>(stored_value)) {
             stored_value = std::string(cfg_getstr(parent, m_identifier.c_str()));
-        } else if (std::holds_alternative<confuse_list<int>>(stored_value)) {
-            confuse_list<int> list;
-            size_t number_of_elements = cfg_size(parent, m_identifier.c_str());
-            list.reserve(number_of_elements);
+        } else {
+            auto fill_list = [&parent, this](auto &list, auto get_function) {
+                size_t number_of_elements = cfg_size(parent, m_identifier.c_str());
+                list.reserve(number_of_elements);
+                for (unsigned int i = 0; i < number_of_elements; ++i) {
+                    list.push_back(get_function(parent, m_identifier.c_str(), i));
+                }
+            };
 
-            for (unsigned int i = 0; i < number_of_elements; i++) {
-                list.push_back(cfg_getnint(parent, m_identifier.c_str(), i));
+            if (std::holds_alternative<confuse_list<int>>(stored_value)) {
+                confuse_list<int> list;
+                fill_list(list, cfg_getnint);
+                stored_value = list;
+            } else if (std::holds_alternative<confuse_list<float>>(stored_value)) {
+                confuse_list<float> list;
+                fill_list(list, cfg_getnfloat);
+                stored_value = list;
+            } else if (std::holds_alternative<confuse_list<bool>>(stored_value)) {
+                confuse_list<bool> list;
+                fill_list(list, cfg_getnbool);
+                stored_value = list;
+            } else if (std::holds_alternative<confuse_list<std::string>>(stored_value)) {
+                confuse_list<std::string> list;
+                fill_list(list, cfg_getnstr);
+                stored_value = list;
             }
-
-            stored_value = list;
-        } else if (std::holds_alternative<confuse_list<float>>(stored_value)) {
-            confuse_list<float> list;
-            size_t number_of_elements = cfg_size(parent, m_identifier.c_str());
-            list.reserve(number_of_elements);
-
-            for (unsigned int i = 0; i < number_of_elements; i++) {
-                list.push_back(cfg_getnfloat(parent, m_identifier.c_str(), i));
-            }
-
-            stored_value = list;
-        } else if (std::holds_alternative<confuse_list<bool>>(stored_value)) {
-            confuse_list<bool> list;
-            size_t number_of_elements = cfg_size(parent, m_identifier.c_str());
-            list.reserve(number_of_elements);
-
-            for (unsigned int i = 0; i < number_of_elements; i++) {
-                list.push_back(cfg_getnbool(parent, m_identifier.c_str(), i));
-            }
-
-            stored_value = list;
-        } else if (std::holds_alternative<confuse_list<std::string>>(stored_value)) {
-            confuse_list<std::string> list;
-            size_t number_of_elements = cfg_size(parent, m_identifier.c_str());
-            list.reserve(number_of_elements);
-
-            for (unsigned int i = 0; i < number_of_elements; i++) {
-                list.push_back(cfg_getnstr(parent, m_identifier.c_str(), i));
-            }
-
-            stored_value = list;
         }
     }
 

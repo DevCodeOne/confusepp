@@ -7,7 +7,7 @@
 #include "confuse_elements.h"
 
 confuse_element::confuse_element(const confuse_element &element)
-    : m_value(element.m_value), m_optional(element.m_optional),
+    : m_value(element.m_value), m_parent(element.m_parent), m_optional(element.m_optional),
     m_identifier(element.m_identifier) {
 }
 
