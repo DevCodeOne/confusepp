@@ -1,6 +1,7 @@
-#include <iostream>
-
 #include <cstdio>
+
+#include <iostream>
+#include <type_traits>
 
 #include <confuse.h>
 
@@ -20,10 +21,7 @@ const std::string &confuse_element::identifier() const {
     return m_identifier;
 }
 
-// TODO handle callbacks and the like also handle last case differently.
-// Remember to add flags somehow
-// also add default value to lists
-// The char buffer that gets passed to CFG_*_LIST won't get changed
+// TODO handle callbacks somehow, also add flags
 cfg_opt_t confuse_element::get_confuse_representation() const {
     cfg_opt_t ret;
 
@@ -43,23 +41,19 @@ cfg_opt_t confuse_element::get_confuse_representation() const {
         ret = tmp;
     } else if (std::holds_alternative<confuse_list<int>>(stored_value)) {
         cfg_opt_t tmp = CFG_INT_LIST(m_identifier.c_str(),
-                std::get<confuse_list<int>>(stored_value).default_value(),
-                CFGF_NONE | CFGF_LIST);
+                std::get<confuse_list<int>>(stored_value).default_value(), CFGF_NONE | CFGF_LIST);
         ret = tmp;
     } else if (std::holds_alternative<confuse_list<float>>(stored_value)) {
         cfg_opt_t tmp = CFG_FLOAT_LIST(m_identifier.c_str(),
-                std::get<confuse_list<float>>(stored_value).default_value(),
-                CFGF_NONE | CFGF_LIST);
+                std::get<confuse_list<float>>(stored_value).default_value(), CFGF_NONE | CFGF_LIST);
         ret = tmp;
     } else if (std::holds_alternative<confuse_list<bool>>(stored_value)) {
         cfg_opt_t tmp = CFG_BOOL_LIST(m_identifier.c_str(),
-                std::get<confuse_list<bool>>(stored_value).default_value(),
-                CFGF_NONE | CFGF_LIST);
+                std::get<confuse_list<bool>>(stored_value).default_value(), CFGF_NONE | CFGF_LIST);
         ret = tmp;
     } else if (std::holds_alternative<confuse_list<std::string>>(stored_value)) {
         cfg_opt_t tmp = CFG_STR_LIST(m_identifier.c_str(),
-                std::get<confuse_list<std::string>>(stored_value).default_value(),
-                CFGF_NONE | CFGF_LIST);
+                std::get<confuse_list<std::string>>(stored_value).default_value(), CFGF_NONE | CFGF_LIST);
         ret = tmp;
     }
 
@@ -78,15 +72,17 @@ const confuse_section *confuse_element::parent() const {
 confuse_section::confuse_section(const std::string &identifier,
         const std::initializer_list<variant_type> &values, bool optional)
     : m_optional(optional), m_identifier(identifier) {
+        auto add_value = [this](const auto &element) {
+            using type = std::remove_const_t<std::remove_reference_t<decltype(element)>>;
+            m_values.emplace(element.identifier(), element);
+            std::get<type>(m_values.at(element.identifier())).parent(this);
+        };
+
         for (auto &current_value : values) {
             if (std::holds_alternative<confuse_element>(current_value)) {
-                confuse_element real_type = std::get<confuse_element>(current_value);
-                m_values.emplace(real_type.identifier(), real_type);
-                std::get<confuse_element>(m_values.at(real_type.identifier())).parent(this);
+                add_value(std::get<confuse_element>(current_value));
             } else if (std::holds_alternative<confuse_section>(current_value)) {
-                confuse_section real_type = std::get<confuse_section>(current_value);
-                m_values.emplace(real_type.identifier(), real_type);
-                std::get<confuse_section>(m_values.at(real_type.identifier())).parent(this);
+                add_value(std::get<confuse_section>(current_value));
             }
         }
 }
