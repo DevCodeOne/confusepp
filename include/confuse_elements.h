@@ -11,17 +11,10 @@
 
 #include <confuse.h>
 
-// TODO implement flags
-class confuse_section_flags {
+template<typename T>
+class confuse_value;
+class confuse_section;
 
-};
-
-// TODO implement flags
-class confuse_value_flags {
-
-};
-
-// TODO implement this
 template<typename T>
 class confuse_list final : public std::vector<T> {
     public:
@@ -45,8 +38,6 @@ class confuse_list final : public std::vector<T> {
         template<typename E>
         friend class confuse_value;
 };
-
-class confuse_section;
 
 class confuse_element {
     public:
@@ -120,7 +111,6 @@ class confuse_section : public confuse_element {
         friend class confuse_value;
 };
 
-// TODO complete implementation (operators and constructors)
 class confuse_root final : public confuse_section {
     public:
         confuse_root(const std::initializer_list<variant_type> &values);
@@ -146,21 +136,22 @@ void swap(confuse_list<T> &lhs, confuse_list<T> &rhs) {
     lhs.swap(rhs);
 }
 
-// TODO create specialization for std::string
 template<typename T>
-confuse_list<T>::confuse_list(const std::initializer_list<T> &values)
-    : std::vector<T>(values) {
-    std::stringstream stream;
+confuse_list<T>::confuse_list(const std::initializer_list<T> &values) : std::vector<T>(values) {
+    std::stringstream stream("{");
 
     stream << "{";
     auto it = values.begin();
     while (it != values.end()) {
-        stream << *it;
+        if constexpr (std::is_same_v<T, std::decay_t<std::string>>) {
+            stream << '\"' << *it << '\"';
+        } else {
+            stream << *it;
+        }
 
         ++it;
         if (it != values.end()) {
             stream << ", ";
-
         }
     }
     stream << "}";

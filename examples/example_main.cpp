@@ -15,7 +15,7 @@ int main() {
             confuse_value<confuse_list<int>>("int_list", confuse_list<int>({42, 13})),
             confuse_value<confuse_list<float>>("float_list"),
             confuse_value<confuse_list<bool>>("bool_list"),
-            confuse_value<confuse_list<std::string>>("string_list")
+            confuse_value<confuse_list<std::string>>("string_list", confuse_list<std::string>({"test, test", "test2"}))
         };
 
     auto config = confuse_config::parse_config("tests/test.conf", std::move(root));

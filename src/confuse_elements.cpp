@@ -32,14 +32,14 @@ const confuse_section *confuse_element::parent() const {
 confuse_section::confuse_section(const std::string &identifier,
         const std::initializer_list<variant_type> &values, bool optional)
     : confuse_element(identifier), m_optional(optional) {
-        for (auto &current_value : values) {
-            std::visit([this](auto &argument) {
-                        auto created_value(argument);
-                        created_value.parent(this);
-                        m_values.emplace(argument.identifier(), created_value);
-                    }, current_value);
-        }
+    for (auto &current_value : values) {
+        std::visit([this](auto &argument) {
+                    auto created_value(argument);
+                    created_value.parent(this);
+                    m_values.emplace(argument.identifier(), created_value);
+                }, current_value);
     }
+}
 
 confuse_section::confuse_section(const confuse_section &section)
     : confuse_element(section), m_values(section.m_values), m_optional(section.m_optional) {
@@ -67,11 +67,10 @@ cfg_opt_t confuse_section::get_confuse_representation(option_storage &opt_storag
         std::visit([&opt_definition, &opt_storage](auto &argument) {
                     using current_type = std::decay_t<decltype(argument)>;
 
-                    if constexpr (!(std::is_same_v<current_type, confuse_section>)) {
-                        opt_definition =  argument.get_confuse_representation();
-                    }
                     if constexpr (std::is_same_v<current_type, confuse_section>) {
                         opt_definition =  argument.get_confuse_representation(opt_storage);
+                    } else {
+                        opt_definition =  argument.get_confuse_representation();
                     }
                 }, current_value.second);
 
