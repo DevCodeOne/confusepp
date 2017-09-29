@@ -10,11 +10,15 @@
 class confuse_config {
     public:
         confuse_config(confuse_config &&config);
+        confuse_config(confuse_config &config) = default;
+        ~confuse_config();
+
+        confuse_config &operator=(const confuse_config &config) = default;
+        confuse_config &operator=(confuse_config &&config) = default;
+
         static std::optional<confuse_config> parse_config(const std::string &filename,
                 confuse_root root);
         const confuse_root &root_node() const;
-
-        ~confuse_config();
     private:
         confuse_config(confuse_root config_tree, cfg_t *config_handle = nullptr);
         void config_handle(cfg_t *config_handle);

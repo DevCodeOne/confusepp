@@ -24,13 +24,13 @@ int main() {
         std::cout << "Config is valid" << std::endl;
 
         auto &root_node = config->root_node();
-        auto element = root_node.get<confuse_element>("int_value");
-        std::cout << element.value<int>() << std::endl;
+        auto element = root_node.get<confuse_value<int>>("int_value");
+        std::cout << element.value() << std::endl;
 
         auto &string_section = root_node.get<confuse_section>("string_section");
-        std::cout << string_section.get<confuse_element>("string_identifier").value<std::string>() << std::endl;
+        std::cout << string_section.get<confuse_value<std::string>>("string_identifier").value() << std::endl;
 
-        auto &int_data = root_node.get<confuse_element>("int_list").value<confuse_list<int>>();
+        auto &int_data = root_node.get<confuse_value<confuse_list<int>>>("int_list").value();
 
         for (const auto &current_value : int_data) {
             std::cout << current_value << " ";
