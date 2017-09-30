@@ -29,9 +29,8 @@ const confuse_section *confuse_element::parent() const {
     return m_parent;
 }
 
-confuse_section::confuse_section(const std::string &identifier,
-        const std::initializer_list<variant_type> &values, bool optional)
-    : confuse_element(identifier), m_optional(optional) {
+confuse_section::confuse_section(const std::string &identifier, const std::initializer_list<variant_type> &values)
+    : confuse_element(identifier) {
     for (auto &current_value : values) {
         std::visit([this](auto &argument) {
                     auto created_value(argument);
@@ -42,14 +41,14 @@ confuse_section::confuse_section(const std::string &identifier,
 }
 
 confuse_section::confuse_section(const confuse_section &section)
-    : confuse_element(section), m_values(section.m_values), m_optional(section.m_optional) {
+    : confuse_element(section), m_values(section.m_values) {
     for (auto &current_value : m_values) {
         std::visit([this](auto &argument) { argument.parent(this); }, current_value.second);
     }
 }
 
 confuse_section::confuse_section(confuse_section &&section)
-    : confuse_element(section), m_values(std::move(section.m_values)), m_optional(std::move(section.m_optional)) {
+    : confuse_element(section), m_values(std::move(section.m_values)) {
     for (auto &current_value : m_values) {
         std::visit([this](auto &argument) { argument.parent(this); }, current_value.second);
     }
@@ -93,7 +92,7 @@ const confuse_section::variant_type &confuse_section::operator[](const std::stri
 }
 
 confuse_root::confuse_root(const std::initializer_list<variant_type> &values)
-    : confuse_section("", values, false) {
+    : confuse_section("", values) {
 }
 
 confuse_root::confuse_root(const confuse_root &root) : confuse_section(root),
