@@ -10,7 +10,10 @@ int main() {
                     confuse_value<std::string>("string_identifier", "test_string")
                     }),
             confuse_section("int_section", {
-                    confuse_value<int>("int_identifier")
+                    confuse_value<int>("int_identifier"),
+                    }),
+            confuse_multi_section("multi", {
+                    confuse_value<std::string>("string_identifier"),
                     }),
             confuse_value<confuse_list<int>>("int_list", confuse_list<int>({42, 13})),
             confuse_value<confuse_list<float>>("float_list"),
@@ -29,6 +32,11 @@ int main() {
 
         auto &string_section = root_node.get<confuse_section>("string_section");
         std::cout << string_section.get<confuse_value<std::string>>("string_identifier").value() << std::endl;
+
+        auto multi_title = root_node.get<confuse_multi_section>("multi")["title"];
+        auto multi_title_two = root_node.get<confuse_multi_section>("multi")["title_two"];
+        std::cout << multi_title->get<confuse_value<std::string>>("string_identifier").value() << std::endl;
+        std::cout << multi_title_two->get<confuse_value<std::string>>("string_identifier").value() << std::endl;
 
         auto &int_data = root_node.get<confuse_value<confuse_list<int>>>("int_list").value();
 

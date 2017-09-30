@@ -14,6 +14,7 @@
 template<typename T>
 class confuse_value;
 class confuse_section;
+class confuse_multi_section;
 
 template<typename T>
 class confuse_list final : public std::vector<T> {
@@ -39,6 +40,12 @@ class confuse_list final : public std::vector<T> {
         friend class confuse_value;
 };
 
+class confuse_parent {
+    public:
+        virtual cfg_t *section_handle() const = 0;
+        virtual ~confuse_parent() = default;
+};
+
 class confuse_element {
     public:
         confuse_element(const std::string &identifier);
@@ -47,15 +54,16 @@ class confuse_element {
 
         const std::string &identifier() const;
     private:
-        void parent(const confuse_section *parent);
-        const confuse_section *parent() const;
+        void parent(const confuse_parent *parent);
+        const confuse_parent *parent() const;
 
-        const confuse_section *m_parent = nullptr;
+        const confuse_parent *m_parent = nullptr;
         const std::string m_identifier;
 
         template<typename T>
         friend class confuse_value;
         friend class confuse_section;
+        friend class confuse_multi_section;
 };
 
 template<typename T>
@@ -78,22 +86,23 @@ class confuse_value final : public confuse_element {
         const bool m_has_default_value;
 
         friend class confuse_section;
+        friend class confuse_multi_section;
 };
 
-class confuse_section : public confuse_element {
+class confuse_section : public confuse_element, public confuse_parent {
     public:
-        using variant_type = std::variant<confuse_section, confuse_value<int>,
+        using variant_type = std::variant<confuse_section, confuse_multi_section, confuse_value<int>,
               confuse_value<float>, confuse_value<bool>, confuse_value<std::string>,
               confuse_value<confuse_list<int>>, confuse_value<confuse_list<float>>,
               confuse_value<confuse_list<bool>>, confuse_value<confuse_list<std::string>>>;
         using option_storage = std::vector<std::unique_ptr<cfg_opt_t []>>;
 
         confuse_section(const std::string &identifier, const std::initializer_list<variant_type> &values);
+        confuse_section(const std::string &identifier, const std::string &title, const std::initializer_list<variant_type> &values);
         confuse_section(const confuse_section &section);
         confuse_section(confuse_section &&section);
         virtual ~confuse_section() = default;
 
-        const variant_type &operator[](const std::string &identifier) const;
         confuse_section &operator=(const confuse_section &section) = delete;
         confuse_section &operator=(confuse_section &&section) = delete;
 
@@ -101,12 +110,16 @@ class confuse_section : public confuse_element {
         const T &get(const std::string &identifier) const;
     protected:
         cfg_opt_t get_confuse_representation(option_storage &opt_storage) const;
-        virtual cfg_t *section_handle() const;
+        virtual cfg_t *section_handle() const override;
     private:
         std::map<std::string, variant_type> m_values;
+        const std::string m_title;
+
+        void add_children(std::vector<variant_type> values);
 
         template<typename T>
         friend class confuse_value;
+        friend class confuse_multi_section;
 };
 
 class confuse_root final : public confuse_section {
@@ -121,12 +134,37 @@ class confuse_root final : public confuse_section {
         explicit operator bool() const;
 
         void config_handle(cfg_t *config_handle);
-    protected:
-        virtual cfg_t *section_handle() const;
     private:
         cfg_t *m_section_handle = nullptr;
 
+        virtual cfg_t *section_handle() const override;
+
         friend class confuse_config;
+};
+
+class confuse_multi_section final : public confuse_element, public confuse_parent {
+    public:
+        using variant_type = confuse_section::variant_type;
+        using option_storage = confuse_section::option_storage;
+
+        confuse_multi_section(const std::string &identifier, const std::initializer_list<variant_type> &values);
+        confuse_multi_section(const confuse_multi_section &section);
+        confuse_multi_section(confuse_multi_section &&section);
+        virtual ~confuse_multi_section() = default;
+
+        std::optional<confuse_section> operator[](const std::string &title) const;
+        confuse_multi_section &operator=(const confuse_section &section) = delete;
+        confuse_multi_section &operator=(confuse_section &&section) = delete;
+    private:
+        std::vector<variant_type> m_values;
+        mutable std::map<std::string, confuse_section> m_sections;
+
+        cfg_opt_t get_confuse_representation(option_storage &opt_storage) const;
+        virtual cfg_t *section_handle() const override;
+
+        template<typename T>
+        friend class confuse_value;
+        friend class confuse_section;
 };
 
 template<typename T>
@@ -342,5 +380,5 @@ inline const confuse_list<std::string> &confuse_value<confuse_list<std::string>>
 
 template<typename T>
 const T &confuse_section::get(const std::string &identifier) const {
-    return std::get<T>(operator[](identifier));
+    return std::get<T>(m_values.at(identifier));
 }
