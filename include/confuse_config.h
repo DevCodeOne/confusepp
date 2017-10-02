@@ -9,8 +9,8 @@
 // TODO implement rule of 5
 class confuse_config {
     public:
+        confuse_config(confuse_config &config) = delete;
         confuse_config(confuse_config &&config);
-        confuse_config(confuse_config &config) = default;
         ~confuse_config();
 
         confuse_config &operator=(const confuse_config &config) = default;

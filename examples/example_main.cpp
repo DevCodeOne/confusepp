@@ -3,8 +3,7 @@
 #include "confusepp.h"
 
 int main() {
-    auto root =
-        confuse_root {
+    confuse_root root{
             confuse_value<int>("int_value", 10),
             confuse_section("string_section", {
                     confuse_value<std::string>("string_identifier", "test_string")

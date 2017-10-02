@@ -276,49 +276,49 @@ confuse_value<T>::confuse_value(confuse_value<T> &&element)
 
 template<>
 inline cfg_opt_t confuse_value<int>::get_confuse_representation() const {
-    cfg_opt_t tmp = CFG_INT(m_identifier.c_str(), m_value, m_has_default_value ? CFGF_NODEFAULT : CFGF_NONE);
+    cfg_opt_t tmp = CFG_INT(m_identifier.c_str(), m_value, m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT);
     return tmp;
 }
 
 template<>
 inline cfg_opt_t confuse_value<float>::get_confuse_representation() const {
-    cfg_opt_t tmp = CFG_FLOAT(m_identifier.c_str(), m_value, m_has_default_value ? CFGF_NODEFAULT : CFGF_NONE);
+    cfg_opt_t tmp = CFG_FLOAT(m_identifier.c_str(), m_value, m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT);
     return tmp;
 }
 
 template<>
 inline cfg_opt_t confuse_value<bool>::get_confuse_representation() const {
-    cfg_opt_t tmp = CFG_BOOL(m_identifier.c_str(), (cfg_bool_t) m_value, m_has_default_value ? CFGF_NODEFAULT : CFGF_NONE);
+    cfg_opt_t tmp = CFG_BOOL(m_identifier.c_str(), (cfg_bool_t) m_value, m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT);
     return tmp;
 }
 
 template<>
 inline cfg_opt_t confuse_value<std::string>::get_confuse_representation() const {
-    cfg_opt_t tmp = CFG_STR(m_identifier.c_str(), m_value.c_str(), m_has_default_value ? CFGF_NODEFAULT : CFGF_NONE);
+    cfg_opt_t tmp = CFG_STR(m_identifier.c_str(), m_value.c_str(), m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT);
     return tmp;
 }
 
 template<>
 inline cfg_opt_t confuse_value<confuse_list<int>>::get_confuse_representation() const {
-    cfg_opt_t tmp = CFG_INT_LIST(m_identifier.c_str(), m_value.default_value(), (m_has_default_value ? CFGF_NODEFAULT : CFGF_NONE) | CFGF_LIST);
+    cfg_opt_t tmp = CFG_INT_LIST(m_identifier.c_str(), m_value.default_value(), (m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT) | CFGF_LIST);
     return tmp;
 }
 
 template<>
 inline cfg_opt_t confuse_value<confuse_list<float>>::get_confuse_representation() const {
-    cfg_opt_t tmp = CFG_FLOAT_LIST(m_identifier.c_str(), m_value.default_value(), (m_has_default_value ? CFGF_NODEFAULT : CFGF_NONE) | CFGF_LIST);
+    cfg_opt_t tmp = CFG_FLOAT_LIST(m_identifier.c_str(), m_value.default_value(), (m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT) | CFGF_LIST);
     return tmp;
 }
 
 template<>
 inline cfg_opt_t confuse_value<confuse_list<bool>>::get_confuse_representation() const {
-    cfg_opt_t tmp = CFG_BOOL_LIST(m_identifier.c_str(), m_value.default_value(), (m_has_default_value ? CFGF_NODEFAULT : CFGF_NONE) | CFGF_LIST);
+    cfg_opt_t tmp = CFG_BOOL_LIST(m_identifier.c_str(), m_value.default_value(), (m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT) | CFGF_LIST);
     return tmp;
 }
 
 template<>
 inline cfg_opt_t confuse_value<confuse_list<std::string>>::get_confuse_representation() const {
-    cfg_opt_t tmp = CFG_STR_LIST(m_identifier.c_str(), m_value.default_value(), (m_has_default_value ? CFGF_NODEFAULT : CFGF_NONE) | CFGF_LIST);
+    cfg_opt_t tmp = CFG_STR_LIST(m_identifier.c_str(), m_value.default_value(), (m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT) | CFGF_LIST);
     return tmp;
 }
 
