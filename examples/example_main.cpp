@@ -20,7 +20,7 @@ int main() {
             confuse_value<confuse_list<std::string>>("string_list").default_value("test, test", "test2")
         };
 
-    auto config = confuse_config::parse_config("tests/test.conf", root);
+    auto config = confuse_config::parse_config("examples/test.conf", root);
 
     if (config) {
         std::cout << "Config is valid" << std::endl;
