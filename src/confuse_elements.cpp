@@ -34,12 +34,6 @@ confuse_section::confuse_section(const std::string &identifier, const std::initi
     add_children(values);
 }
 
-confuse_section::confuse_section(const std::string &identifier,
-        const std::string &title, const std::initializer_list<variant_type> &values)
-        : confuse_element(identifier), m_title(title) {
-    add_children(values);
-}
-
 confuse_section::confuse_section(const confuse_section &section)
     : confuse_element(section), m_values(section.m_values), m_title(section.m_title) {
     for (auto &current_value : m_values) {
@@ -54,8 +48,9 @@ confuse_section::confuse_section(confuse_section &&section)
     }
 }
 
-// TODO set flags
 cfg_opt_t confuse_section::get_confuse_representation(option_storage &opt_storage) const {
+    using namespace std::string_literals;
+
     opt_storage.emplace_back(std::make_unique<cfg_opt_t[]>(m_values.size() + 1));
     size_t storage_entry = opt_storage.size() - 1;
     size_t index = 0;
@@ -79,12 +74,14 @@ cfg_opt_t confuse_section::get_confuse_representation(option_storage &opt_storag
 
     opt_storage[storage_entry][index] = CFG_END();
 
-    cfg_opt_t ret = CFG_SEC(m_identifier.c_str(), opt_storage[storage_entry].get(), CFGF_NONE);
+    cfg_opt_t ret = CFG_SEC(m_identifier.c_str(), opt_storage[storage_entry].get(),
+            m_title == ""s ? CFGF_NONE : CFGF_TITLE);
     return ret;
 }
 
 cfg_t *confuse_section::section_handle() const {
     using namespace std::string_literals;
+
     if (!m_parent || !m_parent->section_handle()) {
         return nullptr;
     }
@@ -94,6 +91,12 @@ cfg_t *confuse_section::section_handle() const {
     }
 
     return cfg_gettsec(m_parent->section_handle(), m_identifier.c_str(), m_title.c_str());
+}
+
+confuse_section &confuse_section::title(const std::string &title) {
+    m_title = title;
+
+    return *this;
 }
 
 void confuse_section::add_children(std::vector<variant_type> values) {
@@ -155,7 +158,7 @@ std::optional<confuse_section> confuse_multi_section::operator[](const std::stri
         cfg_t *found_section = cfg_gettsec(m_parent->section_handle(), m_identifier.c_str(), title.c_str());
 
         if (found_section) {
-            auto value = m_sections.emplace(std::make_pair(title, confuse_section(m_identifier, title, {})));
+            auto value = m_sections.emplace(std::make_pair(title, confuse_section(m_identifier, {}).title(title)));
             value.first->second.add_children(m_values);
             value.first->second.parent(m_parent);
             return {value.first->second};
