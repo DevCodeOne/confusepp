@@ -3,7 +3,7 @@
 #include "confusepp.h"
 
 int main() {
-    using namespace confuse;
+    using namespace confusepp;
     Root root{Option<int>("int_value").default_value(0),
               Section("string_section").values(Option<std::string>("string_identifier").default_value("test_string")),
               Section("int_section")
@@ -15,7 +15,7 @@ int main() {
               Option<List<bool>>("bool_list"),
               Option<List<std::string>>("string_list").default_value("test, test", "test2")};
 
-    auto config = Config::parse_config("examples/test.conf", root);
+    auto config = Config::parse_config("../../examples/test.conf", root);
 
     if (config) {
         std::cout << "Config is valid." << std::endl;
