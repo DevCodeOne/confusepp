@@ -20,9 +20,8 @@ void confuse::Element::parent(const confuse::Parent *parent) { m_parent = parent
 
 const confuse::Parent *confuse::Element::parent() const { return m_parent; }
 
-confuse::Section::Section(const std::string &identifier, const std::initializer_list<variant_type> &values)
+confuse::Section::Section(const std::string &identifier)
     : confuse::Element(identifier) {
-    add_children(values);
 }
 
 confuse::Section::Section(const confuse::Section &section)
@@ -92,6 +91,13 @@ confuse::Section &confuse::Section::title(const std::string &title) {
     return *this;
 }
 
+confuse::Section& confuse::Section::values(const std::initializer_list<variant_type>& values) {
+    m_values.clear();
+    add_children(values);
+
+    return *this;
+}
+
 void confuse::Section::add_children(std::vector<variant_type> values) {
     for (auto &current_value : values) {
         std::visit(
@@ -104,7 +110,9 @@ void confuse::Section::add_children(std::vector<variant_type> values) {
     }
 }
 
-confuse::Root::Root(const std::initializer_list<variant_type> &values) : confuse::Section("", values) {}
+confuse::Root::Root(const std::initializer_list<variant_type> &value_list) : confuse::Section("") {
+    values(value_list);
+}
 
 confuse::Root::Root(const confuse::Root &root) : confuse::Section(root), m_section_handle(root.m_section_handle) {}
 
@@ -114,11 +122,8 @@ void confuse::Root::config_handle(cfg_t *config_handle) { m_section_handle = con
 
 cfg_t *confuse::Root::section_handle() const { return m_section_handle; }
 
-confuse::Multisection::Multisection(const std::string &identifier, const std::initializer_list<variant_type> &values)
-    : confuse::Element(identifier), m_values(values) {
-    for (auto &current_value : m_values) {
-        std::visit([this](auto &argument) { argument.parent(this); }, current_value);
-    }
+confuse::Multisection::Multisection(const std::string &identifier)
+    : confuse::Element(identifier) {
 }
 
 confuse::Multisection::Multisection(const confuse::Multisection &section)
@@ -135,6 +140,15 @@ confuse::Multisection::Multisection(confuse::Multisection &&section)
     }
 }
 
+confuse::Multisection &confuse::Multisection::values(const std::initializer_list<variant_type> &values) {
+    m_values = std::vector<variant_type>(values);
+    for (auto &current_value : m_values) {
+        std::visit([this](auto &argument) { argument.parent(this); }, current_value);
+    }
+
+    return *this;
+}
+
 std::optional<confuse::Section> confuse::Multisection::operator[](const std::string &title) const {
     if (auto section = m_sections.find(title); section != m_sections.cend()) {
         return { section->second };
@@ -144,7 +158,7 @@ std::optional<confuse::Section> confuse::Multisection::operator[](const std::str
         cfg_t *found_section = cfg_gettsec(m_parent->section_handle(), m_identifier.c_str(), title.c_str());
 
         if (found_section) {
-            auto value = m_sections.emplace(std::make_pair(title, confuse::Section(m_identifier, {}).title(title)));
+            auto value = m_sections.emplace(std::make_pair(title, confuse::Section(m_identifier).title(title)));
             value.first->second.add_children(m_values);
             value.first->second.parent(m_parent);
             return { value.first->second };

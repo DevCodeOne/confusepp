@@ -103,7 +103,7 @@ class Section : public Element, public Parent {
                      Option<List<int>>, Option<List<float>>, Option<List<bool>>, Option<List<std::string>>>;
     using option_storage = std::vector<std::unique_ptr<cfg_opt_t[]>>;
 
-    Section(const std::string& identifier, const std::initializer_list<variant_type>& values);
+    Section(const std::string& identifier);
     Section(const Section& section);
     Section(Section&& section);
     virtual ~Section() = default;
@@ -114,6 +114,7 @@ class Section : public Element, public Parent {
     template<typename T>
     const T& get(const std::string& identifier) const;
     Section& title(const std::string& title);
+    Section& values(const std::initializer_list<variant_type>& values);
 
    protected:
     cfg_opt_t get_confuse_representation(option_storage& opt_storage) const;
@@ -157,7 +158,7 @@ class Multisection final : public Element, public Parent {
     using variant_type = Section::variant_type;
     using option_storage = Section::option_storage;
 
-    Multisection(const std::string& identifier, const std::initializer_list<variant_type>& values);
+    Multisection(const std::string& identifier);
     Multisection(const Multisection& section);
     Multisection(Multisection&& section);
     virtual ~Multisection() = default;
@@ -165,6 +166,8 @@ class Multisection final : public Element, public Parent {
     std::optional<Section> operator[](const std::string& title) const;
     Multisection& operator=(const Section& section) = delete;
     Multisection& operator=(Section&& section) = delete;
+
+    Multisection &values(const std::initializer_list<variant_type>& values);
 
    private:
     cfg_opt_t get_confuse_representation(option_storage& opt_storage) const;
