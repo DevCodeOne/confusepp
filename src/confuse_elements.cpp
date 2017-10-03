@@ -91,13 +91,6 @@ confuse::Section &confuse::Section::title(const std::string &title) {
     return *this;
 }
 
-confuse::Section& confuse::Section::values(const std::initializer_list<variant_type>& values) {
-    m_values.clear();
-    add_children(values);
-
-    return *this;
-}
-
 void confuse::Section::add_children(std::vector<variant_type> values) {
     for (auto &current_value : values) {
         std::visit(
@@ -138,15 +131,6 @@ confuse::Multisection::Multisection(confuse::Multisection &&section)
     for (auto &current_value : m_values) {
         std::visit([this](auto &argument) { argument.parent(this); }, current_value);
     }
-}
-
-confuse::Multisection &confuse::Multisection::values(const std::initializer_list<variant_type> &values) {
-    m_values = std::vector<variant_type>(values);
-    for (auto &current_value : m_values) {
-        std::visit([this](auto &argument) { argument.parent(this); }, current_value);
-    }
-
-    return *this;
 }
 
 std::optional<confuse::Section> confuse::Multisection::operator[](const std::string &title) const {

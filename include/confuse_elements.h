@@ -114,7 +114,8 @@ class Section : public Element, public Parent {
     template<typename T>
     const T& get(const std::string& identifier) const;
     Section& title(const std::string& title);
-    Section& values(const std::initializer_list<variant_type>& values);
+    template<typename ... Args>
+    Section& values(Args ... args);
 
    protected:
     cfg_opt_t get_confuse_representation(option_storage& opt_storage) const;
@@ -167,7 +168,8 @@ class Multisection final : public Element, public Parent {
     Multisection& operator=(const Section& section) = delete;
     Multisection& operator=(Section&& section) = delete;
 
-    Multisection &values(const std::initializer_list<variant_type>& values);
+    template<typename ... Args>
+    Multisection &values(Args ... args);
 
    private:
     cfg_opt_t get_confuse_representation(option_storage& opt_storage) const;
@@ -406,4 +408,25 @@ template<typename T>
 const T& Section::get(const std::string& identifier) const {
     return std::get<T>(m_values.at(identifier));
 }
+
+template<typename ... Args>
+Section& Section::values(Args ... args) {
+    m_values.clear();
+    add_children({args ...});
+
+    return *this;
+}
+
+template<typename ... Args>
+Multisection &Multisection::values(Args ... args) {
+    m_values = std::vector<variant_type>({args ...});
+    for (auto &current_value : m_values) {
+        std::visit([this](auto &argument) { argument.parent(this); }, current_value);
+    }
+
+    return *this;
+}
+
+
+
 }  // namespace confuse
