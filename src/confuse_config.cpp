@@ -3,9 +3,7 @@
 #include "confuse_config.h"
 
 namespace confusepp {
-    // also create different version that take Root as rvalue
-    // (in this method just create copy and cast the copy to rvalue and call other
-    // func)
+
     std::optional<Config> Config::parse_config(const std::string& filename, Root root) {
         std::unique_ptr<FILE, decltype(&std::fclose)> config_file(std::fopen(filename.c_str(), "r"), &std::fclose);
 

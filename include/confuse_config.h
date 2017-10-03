@@ -6,7 +6,6 @@
 
 #include "confuse_elements.h"
 
-// TODO implement rule of 5
 namespace confusepp {
 
     class Config {
