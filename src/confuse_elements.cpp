@@ -4,51 +4,51 @@
 
 #include "confuse_elements.h"
 
-confuse_element::confuse_element(const std::string &identifier)
+confuse::Element::Element(const std::string &identifier)
     : m_identifier(identifier) {
 }
 
-confuse_element::confuse_element(const confuse_element &element)
+confuse::Element::Element(const confuse::Element &element)
     : m_parent(element.m_parent), m_identifier(element.m_identifier) {
 }
 
-confuse_element::confuse_element(confuse_element &&element)
+confuse::Element::Element(confuse::Element &&element)
     : m_parent(std::move(element.m_parent)), m_identifier(std::move(element.m_identifier)) {
     element.m_parent = nullptr;
 }
 
-const std::string &confuse_element::identifier() const {
+const std::string &confuse::Element::identifier() const {
     return m_identifier;
 }
 
-void confuse_element::parent(const confuse_parent *parent) {
+void confuse::Element::parent(const confuse::Parent *parent) {
     m_parent = parent;
 }
 
-const confuse_parent *confuse_element::parent() const {
+const confuse::Parent *confuse::Element::parent() const {
     return m_parent;
 }
 
-confuse_section::confuse_section(const std::string &identifier, const std::initializer_list<variant_type> &values)
-    : confuse_element(identifier) {
+confuse::Section::Section(const std::string &identifier, const std::initializer_list<variant_type> &values)
+    : confuse::Element(identifier) {
     add_children(values);
 }
 
-confuse_section::confuse_section(const confuse_section &section)
-    : confuse_element(section), m_values(section.m_values), m_title(section.m_title) {
+confuse::Section::Section(const confuse::Section &section)
+    : confuse::Element(section), m_values(section.m_values), m_title(section.m_title) {
     for (auto &current_value : m_values) {
         std::visit([this](auto &argument) { argument.parent(this); }, current_value.second);
     }
 }
 
-confuse_section::confuse_section(confuse_section &&section)
-    : confuse_element(section), m_values(std::move(section.m_values)), m_title(std::move(section.m_title)) {
+confuse::Section::Section(confuse::Section &&section)
+    : confuse::Element(section), m_values(std::move(section.m_values)), m_title(std::move(section.m_title)) {
     for (auto &current_value : m_values) {
         std::visit([this](auto &argument) { argument.parent(this); }, current_value.second);
     }
 }
 
-cfg_opt_t confuse_section::get_confuse_representation(option_storage &opt_storage) const {
+cfg_opt_t confuse::Section::get_confuse_representation(option_storage &opt_storage) const {
     using namespace std::string_literals;
 
     opt_storage.emplace_back(std::make_unique<cfg_opt_t[]>(m_values.size() + 1));
@@ -61,7 +61,7 @@ cfg_opt_t confuse_section::get_confuse_representation(option_storage &opt_storag
         std::visit([&opt_definition, &opt_storage](auto &argument) {
                     using current_type = std::decay_t<decltype(argument)>;
 
-                    if constexpr (std::is_base_of_v<confuse_parent, current_type>) {
+                    if constexpr (std::is_base_of_v<confuse::Parent, current_type>) {
                         opt_definition = argument.get_confuse_representation(opt_storage);
                     } else {
                         opt_definition = argument.get_confuse_representation();
@@ -79,7 +79,7 @@ cfg_opt_t confuse_section::get_confuse_representation(option_storage &opt_storag
     return ret;
 }
 
-cfg_t *confuse_section::section_handle() const {
+cfg_t *confuse::Section::section_handle() const {
     using namespace std::string_literals;
 
     if (!m_parent || !m_parent->section_handle()) {
@@ -93,13 +93,13 @@ cfg_t *confuse_section::section_handle() const {
     return cfg_gettsec(m_parent->section_handle(), m_identifier.c_str(), m_title.c_str());
 }
 
-confuse_section &confuse_section::title(const std::string &title) {
+confuse::Section &confuse::Section::title(const std::string &title) {
     m_title = title;
 
     return *this;
 }
 
-void confuse_section::add_children(std::vector<variant_type> values) {
+void confuse::Section::add_children(std::vector<variant_type> values) {
     for (auto &current_value : values) {
         std::visit([this](auto &argument) {
                     auto created_value(std::move(argument));
@@ -109,48 +109,48 @@ void confuse_section::add_children(std::vector<variant_type> values) {
     }
 }
 
-confuse_root::confuse_root(const std::initializer_list<variant_type> &values)
-    : confuse_section("", values) {
+confuse::Root::Root(const std::initializer_list<variant_type> &values)
+    : confuse::Section("", values) {
 }
 
-confuse_root::confuse_root(const confuse_root &root) : confuse_section(root),
+confuse::Root::Root(const confuse::Root &root) : confuse::Section(root),
     m_section_handle(root.m_section_handle) {
 }
 
-confuse_root::confuse_root(confuse_root &&root) : confuse_section(root),
+confuse::Root::Root(confuse::Root &&root) : confuse::Section(root),
     m_section_handle(root.m_section_handle) {
 }
 
-void confuse_root::config_handle(cfg_t *config_handle) {
+void confuse::Root::config_handle(cfg_t *config_handle) {
     m_section_handle = config_handle;
 }
 
-cfg_t *confuse_root::section_handle() const {
+cfg_t *confuse::Root::section_handle() const {
     return m_section_handle;
 }
 
-confuse_multi_section::confuse_multi_section(const std::string &identifier,
-        const std::initializer_list<variant_type> &values) : confuse_element(identifier), m_values(values) {
+confuse::Multisection::Multisection(const std::string &identifier,
+        const std::initializer_list<variant_type> &values) : confuse::Element(identifier), m_values(values) {
     for (auto &current_value : m_values) {
         std::visit([this](auto &argument) { argument.parent(this); }, current_value);
     }
 }
 
-confuse_multi_section::confuse_multi_section(const confuse_multi_section &section)
-    : confuse_element(section), m_values(section.m_values) {
+confuse::Multisection::Multisection(const confuse::Multisection &section)
+    : confuse::Element(section), m_values(section.m_values) {
     for (auto &current_value : m_values) {
         std::visit([this](auto &argument) { argument.parent(this); }, current_value);
     }
 }
 
-confuse_multi_section::confuse_multi_section(confuse_multi_section &&section)
-    : confuse_element(section), m_values(section.m_values) {
+confuse::Multisection::Multisection(confuse::Multisection &&section)
+    : confuse::Element(section), m_values(section.m_values) {
     for (auto &current_value : m_values) {
         std::visit([this](auto &argument) { argument.parent(this); }, current_value);
     }
 }
 
-std::optional<confuse_section> confuse_multi_section::operator[](const std::string &title) const {
+std::optional<confuse::Section> confuse::Multisection::operator[](const std::string &title) const {
     if (auto section = m_sections.find(title); section != m_sections.cend())
         return {section->second};
 
@@ -158,7 +158,7 @@ std::optional<confuse_section> confuse_multi_section::operator[](const std::stri
         cfg_t *found_section = cfg_gettsec(m_parent->section_handle(), m_identifier.c_str(), title.c_str());
 
         if (found_section) {
-            auto value = m_sections.emplace(std::make_pair(title, confuse_section(m_identifier, {}).title(title)));
+            auto value = m_sections.emplace(std::make_pair(title, confuse::Section(m_identifier, {}).title(title)));
             value.first->second.add_children(m_values);
             value.first->second.parent(m_parent);
             return {value.first->second};
@@ -168,7 +168,7 @@ std::optional<confuse_section> confuse_multi_section::operator[](const std::stri
     return {};
 }
 
-cfg_opt_t confuse_multi_section::get_confuse_representation(option_storage &opt_storage) const {
+cfg_opt_t confuse::Multisection::get_confuse_representation(option_storage &opt_storage) const {
     opt_storage.emplace_back(std::make_unique<cfg_opt_t[]>(m_values.size() + 1));
     size_t storage_entry = opt_storage.size() - 1;
     size_t index = 0;
@@ -179,7 +179,7 @@ cfg_opt_t confuse_multi_section::get_confuse_representation(option_storage &opt_
         std::visit([&opt_definition, &opt_storage](auto &argument) {
                     using current_type = std::decay_t<decltype(argument)>;
 
-                    if constexpr (std::is_base_of_v<confuse_parent, current_type>) {
+                    if constexpr (std::is_base_of_v<confuse::Parent, current_type>) {
                         opt_definition = argument.get_confuse_representation(opt_storage);
                     } else {
                         opt_definition = argument.get_confuse_representation();
@@ -197,6 +197,6 @@ cfg_opt_t confuse_multi_section::get_confuse_representation(option_storage &opt_
 }
 
 // TODO maybe for later multi sections in multi sections ?
-cfg_t *confuse_multi_section::section_handle() const {
+cfg_t *confuse::Multisection::section_handle() const {
     return cfg_getsec(m_parent->section_handle(), m_identifier.c_str());
 }

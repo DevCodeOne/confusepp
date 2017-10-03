@@ -7,25 +7,35 @@
 #include "confuse_elements.h"
 
 // TODO implement rule of 5
-class confuse_config {
+namespace confuse{
+    class Config {
     public:
-        confuse_config(confuse_config &config) = delete;
-        confuse_config(confuse_config &&config);
-        ~confuse_config();
+        Config(Config& config) = delete;
 
-        confuse_config &operator=(const confuse_config &config) = default;
-        confuse_config &operator=(confuse_config &&config) = default;
+        Config(Config&& config);
 
-        static std::optional<confuse_config> parse_config(const std::string &filename,
-                confuse_root root);
-        const confuse_root &root_node() const;
+        ~Config();
+
+        Config& operator=(const Config& config) = default;
+
+        Config& operator=(Config&& config) = default;
+
+        static std::optional<Config> parse_config(const std::string& filename,
+                                                          confuse::Root root);
+
+        const Root& root_node() const;
+
     private:
-        confuse_config(confuse_root config_tree, cfg_t *config_handle = nullptr);
-        void config_handle(cfg_t *config_handle);
-        const cfg_t *config_handle() const;
-        cfg_t *config_handle();
+        Config(Root config_tree, cfg_t* config_handle = nullptr);
 
-        cfg_t *m_config_handle;
-        confuse_root m_config_tree;
+        void config_handle(cfg_t* config_handle);
+
+        const cfg_t* config_handle() const;
+
+        cfg_t* config_handle();
+
+        cfg_t* m_config_handle;
+        Root m_config_tree;
         std::vector<std::unique_ptr<cfg_opt_t[]>> m_opt_storage;
-};
+    };
+}
