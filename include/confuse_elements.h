@@ -2,284 +2,430 @@
 
 #include <cstring>
 
-#include <istream>
-#include <ostream>
 #include <map>
 #include <memory>
 #include <sstream>
-#include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
 
 #include <confuse.h>
 
-// TODO implement flags
-class confuse_section_flags {
+namespace confusepp {
 
-};
+    template<typename T>
+    class Option;
+    class Section;
+    class Multisection;
 
-// TODO implement flags
-class confuse_element_flags {
+    template<typename T>
+    class List final : public std::vector<T> {
+       public:
+        template<typename... Args>
+        List(Args... args);
+        List(const List& list);
+        List(List&& list);
+        virtual ~List() = default;
 
-};
+        List& operator=(List list);
 
-// TODO implement this
-template<typename T>
-class confuse_list final : public std::vector<T> {
-    public:
-        confuse_list(const std::initializer_list<T> &values = {});
-        confuse_list(const confuse_list &list);
-        confuse_list(confuse_list &&list);
-        const char *default_value() const;
-        char *default_value();
+        void swap(List& other);
+        char* default_value();
+        const char* default_value() const;
 
-        confuse_list &operator=(confuse_list list);
+       private:
+        template<typename F>
+        void update_list(cfg_t* parent, const std::string& identifier, F f);
 
-        void swap(confuse_list &other);
-        virtual ~confuse_list() = default;
-    private:
         size_t m_buffer_size = 0;
         std::unique_ptr<char[]> m_default_value_buf = nullptr;
-};
 
-class confuse_section;
+        template<typename E>
+        friend class Option;
+    };
 
-// Add some sort of mechanism for the default value of lists (string)
-class confuse_element final {
-    public:
-        using value_type = std::variant<int, float, bool, std::string,
-              confuse_list<int>, confuse_list<float>, confuse_list<bool>, confuse_list<std::string>>;
+    class Parent {
+       public:
+        virtual cfg_t* section_handle() const = 0;
+        virtual ~Parent() = default;
+    };
+
+    class Element {
+       public:
+        Element(const std::string& identifier);
+        Element(const Element& element);
+        Element(Element&& element);
+
+        const std::string& identifier() const;
+
+       private:
+        void parent(const Parent* parent);
+        const Parent* parent() const;
+
+        const Parent* m_parent = nullptr;
+        const std::string m_identifier;
 
         template<typename T>
-        confuse_element(const std::string &identifier, const T &default_value = {},
-                bool optional = false);
-        confuse_element(const confuse_element &element);
-        confuse_element(confuse_element &&element);
+        friend class Option;
+        friend class Section;
+        friend class Multisection;
+    };
 
-        confuse_element &operator=(const confuse_element &element) = delete;
-        confuse_element &operator=(confuse_element &&element) = delete;
+    template<typename T>
+    class Option final : public Element {
+       public:
+        Option(const std::string& identifier);
+        Option(const Option& element);
+        Option(Option&& element);
+        ~Option() = default;
 
-        const std::string &identifier() const;
-        template<typename T>
-        const T &value() const;
-    private:
+        Option& operator=(const Option& element) = delete;
+        Option& operator=(Option&& element) = delete;
+
+        template<typename... Args>
+        const Option<T>& default_value(Args... args);
+        const T& value() const;
+
+       private:
         cfg_opt_t get_confuse_representation() const;
-        void parent(const confuse_section *parent);
-        const confuse_section *parent() const;
 
-        mutable value_type m_value;
-        const confuse_section *m_parent = nullptr;
-        const bool m_optional;
-        const std::string m_identifier;
+        mutable T m_value;
+        bool m_has_default_value;
 
-        friend class confuse_section;
-};
+        friend class Section;
+        friend class Multisection;
+    };
 
-class confuse_section {
-    public:
-        using variant_type = std::variant<confuse_section, confuse_element>;
-        using option_storage = std::vector<std::unique_ptr<cfg_opt_t []>>;
+    class Section : public Element, public Parent {
+       public:
+        using variant_type =
+            std::variant<Section, Multisection, Option<int>, Option<float>, Option<bool>, Option<std::string>,
+                         Option<List<int>>, Option<List<float>>, Option<List<bool>>, Option<List<std::string>>>;
+        using option_storage = std::vector<std::unique_ptr<cfg_opt_t[]>>;
 
-        confuse_section(const std::string &identifier,
-                const std::initializer_list<variant_type> &values, bool optional = false);
-        confuse_section(const confuse_section &section);
-        confuse_section(confuse_section &&section);
-        virtual ~confuse_section() = default;
+        Section(const std::string& identifier);
+        Section(const Section& section);
+        Section(Section&& section);
+        virtual ~Section() = default;
 
-        const std::string &identifier() const;
-        const variant_type &operator[](const std::string &identifier) const;
+        Section& operator=(const Section& section) = delete;
+        Section& operator=(Section&& section) = delete;
+
         template<typename T>
-        const T &get(const std::string &identifier) const;
-        confuse_section &operator=(const confuse_section &section) = delete;
-        confuse_section &operator=(confuse_section &&section) = delete;
-    protected:
-        cfg_opt_t get_confuse_representation(option_storage &opt_storage) const;
-        void parent(const confuse_section *parent);
-        const confuse_section *parent() const;
-        virtual cfg_t *section_handle() const;
-    private:
+        const T& get(const std::string& identifier) const;
+        Section& title(const std::string& title);
+        template<typename... Args>
+        Section& values(Args... args);
 
+       protected:
+        cfg_opt_t get_confuse_representation(option_storage& opt_storage) const;
+
+        virtual cfg_t* section_handle() const override;
+
+       private:
         std::map<std::string, variant_type> m_values;
-        const confuse_section *m_parent = nullptr;
+        std::string m_title;
 
-        const bool m_optional;
-        const std::string m_identifier;
+        void add_children(std::vector<variant_type> values);
 
-        friend class confuse_element;
-};
+        template<typename T>
+        friend class Option;
+        friend class Multisection;
+    };
 
-// TODO complete implementation (operators and constructors)
-class confuse_root final : public confuse_section {
-    public:
-        confuse_root(const std::initializer_list<variant_type> &values);
-        confuse_root(const confuse_root &root);
-        confuse_root(confuse_root &&root);
+    class Root final : public Section {
+       public:
+        Root(const std::initializer_list<variant_type>& values);
+        Root(const Root& root);
+        Root(Root&& root);
+        virtual ~Root() = default;
 
-        virtual ~confuse_root() = default;
+        Root& operator=(const Root& root) = delete;
+        Root& operator=(Root&& root) = delete;
 
-        void config_handle(cfg_t *config_handle);
-        virtual cfg_t *section_handle() const;
-
-        confuse_root &operator=(const confuse_root &root) = delete;
-        confuse_root &operator=(confuse_root &&root) = delete;
         explicit operator bool() const;
-    private:
-        cfg_t *m_section_handle = nullptr;
+        void config_handle(cfg_t* config_handle);
 
-        friend class confuse_config;
-};
+       private:
+        cfg_t* m_section_handle = nullptr;
 
-template<typename T>
-void swap(confuse_list<T> &lhs, confuse_list<T> &rhs) {
-    lhs.swap(rhs);
-}
+        virtual cfg_t* section_handle() const override;
 
-// TODO create specialization for std::string
-template<typename T>
-confuse_list<T>::confuse_list(const std::initializer_list<T> &values)
-    : std::vector<T>(values) {
-    std::stringstream stream;
+        friend class Config;
+    };
 
-    stream << "{";
-    auto it = values.begin();
-    while (it != values.end()) {
-        stream << *it;
+    class Multisection final : public Element, public Parent {
+       public:
+        using variant_type = Section::variant_type;
+        using option_storage = Section::option_storage;
 
-        ++it;
-        if (it != values.end()) {
-            stream << ", ";
+        Multisection(const std::string& identifier);
+        Multisection(const Multisection& section);
+        Multisection(Multisection&& section);
+        virtual ~Multisection() = default;
 
+        std::optional<Section> operator[](const std::string& title) const;
+        Multisection& operator=(const Section& section) = delete;
+        Multisection& operator=(Section&& section) = delete;
+
+        template<typename... Args>
+        Multisection& values(Args... args);
+
+       private:
+        cfg_opt_t get_confuse_representation(option_storage& opt_storage) const;
+        virtual cfg_t* section_handle() const override;
+
+        std::vector<variant_type> m_values;
+        mutable std::map<std::string, Section> m_sections;
+
+        template<typename T>
+        friend class Option;
+        friend class Section;
+    };
+
+    template<typename T>
+    void swap(List<T>& lhs, List<T>& rhs) {
+        lhs.swap(rhs);
+    }
+
+    template<typename T>
+    template<typename... Args>
+    List<T>::List(Args... args) : std::vector<T>(std::initializer_list<T>{args...}) {
+        std::stringstream stream("{");
+
+        stream << "{";
+        auto it = std::vector<T>::cbegin();
+        while (it != std::vector<T>::cend()) {
+            if constexpr (std::is_same_v<T, std::decay_t<std::string>>) {
+                stream << '\"' << *it << '\"';
+            } else {
+                stream << *it;
+            }
+
+            ++it;
+            if (it != std::vector<T>::cend()) {
+                stream << ", ";
+            }
         }
-    }
-    stream << "}";
+        stream << "}";
 
-    m_buffer_size = stream.str().size() + 1;
-    m_default_value_buf = std::make_unique<char[]>(m_buffer_size);
+        m_buffer_size = stream.str().size() + 1;
+        m_default_value_buf = std::make_unique<char[]>(m_buffer_size);
 
-    if (m_buffer_size && m_default_value_buf) {
-        std::strncpy(m_default_value_buf.get(), stream.str().c_str(), m_buffer_size);
-    }
-}
-
-template<typename T>
-confuse_list<T>::confuse_list(const confuse_list &list) : std::vector<T>(list),
-    m_buffer_size(list.m_buffer_size),
-    m_default_value_buf(std::make_unique<char[]>(m_buffer_size)) {
-
-    if (m_buffer_size && m_default_value_buf && list.m_default_value_buf) {
-        std::strncpy(m_default_value_buf.get(),
-                list.m_default_value_buf.get(), m_buffer_size);
-    }
-}
-
-template<typename T>
-confuse_list<T>::confuse_list(confuse_list &&list) : std::vector<T>(list),
-    m_buffer_size(list.m_buffer_size),
-    m_default_value_buf(std::move(list.m_default_value_buf)) {
-    list.m_default_value_buf = nullptr;
-}
-
-template<typename T>
-confuse_list<T> &confuse_list<T>::operator=(confuse_list list) {
-    swap(list);
-
-    return *this;
-}
-
-template<typename T>
-const char *confuse_list<T>::default_value() const {
-    return m_default_value_buf.get();
-}
-
-template<typename T>
-char *confuse_list<T>::default_value() {
-    return m_default_value_buf.get();
-}
-
-template<typename T>
-void confuse_list<T>::swap(confuse_list &other) {
-    using std::swap;
-
-    swap((std::vector<T> &) *this, (std::vector<T> &) other);
-    swap(m_buffer_size, other.m_buffer_size);
-    swap(m_default_value_buf, other.m_default_value_buf);
-}
-
-// TODO correct datatypes and add missing ones
-// remove duplicated code somehow
-template<typename T>
-const T &confuse_element::value() const {
-    auto &stored_value = m_value;
-    cfg_t *parent = m_parent->section_handle();
-
-    if (parent) {
-        if (std::holds_alternative<int>(stored_value)) {
-            stored_value = value_type((int) cfg_getint(parent, m_identifier.c_str()));
-        } else if (std::holds_alternative<float>(stored_value)) {
-            stored_value = value_type((float) cfg_getfloat(parent, m_identifier.c_str()));
-        } else if (std::holds_alternative<bool>(stored_value)) {
-            stored_value = cfg_getbool(parent, m_identifier.c_str());
-        } else if (std::holds_alternative<std::string>(stored_value)) {
-            stored_value = std::string(cfg_getstr(parent, m_identifier.c_str()));
-        } else if (std::holds_alternative<confuse_list<int>>(stored_value)) {
-            confuse_list<int> list;
-            size_t number_of_elements = cfg_size(parent, m_identifier.c_str());
-            list.reserve(number_of_elements);
-
-            for (unsigned int i = 0; i < number_of_elements; i++) {
-                list.push_back(cfg_getnint(parent, m_identifier.c_str(), i));
-            }
-
-            stored_value = list;
-        } else if (std::holds_alternative<confuse_list<float>>(stored_value)) {
-            confuse_list<float> list;
-            size_t number_of_elements = cfg_size(parent, m_identifier.c_str());
-            list.reserve(number_of_elements);
-
-            for (unsigned int i = 0; i < number_of_elements; i++) {
-                list.push_back(cfg_getnfloat(parent, m_identifier.c_str(), i));
-            }
-
-            stored_value = list;
-        } else if (std::holds_alternative<confuse_list<bool>>(stored_value)) {
-            confuse_list<bool> list;
-            size_t number_of_elements = cfg_size(parent, m_identifier.c_str());
-            list.reserve(number_of_elements);
-
-            for (unsigned int i = 0; i < number_of_elements; i++) {
-                list.push_back(cfg_getnbool(parent, m_identifier.c_str(), i));
-            }
-
-            stored_value = list;
-        } else if (std::holds_alternative<confuse_list<std::string>>(stored_value)) {
-            confuse_list<std::string> list;
-            size_t number_of_elements = cfg_size(parent, m_identifier.c_str());
-            list.reserve(number_of_elements);
-
-            for (unsigned int i = 0; i < number_of_elements; i++) {
-                list.push_back(cfg_getnstr(parent, m_identifier.c_str(), i));
-            }
-
-            stored_value = list;
+        if (m_buffer_size && m_default_value_buf) {
+            std::strncpy(m_default_value_buf.get(), stream.str().c_str(), m_buffer_size);
         }
     }
 
-    return std::get<T>(stored_value);
-}
+    template<typename T>
+    List<T>::List(const List& list)
+        : std::vector<T>(list),
+          m_buffer_size(list.m_buffer_size),
+          m_default_value_buf(std::make_unique<char[]>(m_buffer_size)) {
+        if (m_buffer_size && m_default_value_buf && list.m_default_value_buf) {
+            std::strncpy(m_default_value_buf.get(), list.m_default_value_buf.get(), m_buffer_size);
+        }
+    }
 
-template<typename T>
-confuse_element::confuse_element(const std::string &identifier, const T &default_value, bool optional)
-    : m_value(default_value), m_optional(optional), m_identifier(identifier) {
-}
+    template<typename T>
+    List<T>::List(List&& list)
+        : std::vector<T>(list),
+          m_buffer_size(list.m_buffer_size),
+          m_default_value_buf(std::move(list.m_default_value_buf)) {
+        list.m_default_value_buf = nullptr;
+    }
 
-template<typename T>
-const T &confuse_section::get(const std::string &identifier) const {
-    return std::get<T>(operator[](identifier));
-}
+    template<typename T>
+    List<T>& List<T>::operator=(List list) {
+        swap(list);
+        return *this;
+    }
 
+    template<typename T>
+    const char* List<T>::default_value() const {
+        return m_default_value_buf.get();
+    }
 
-template<typename T>
-confuse_element confuse_value(const std::string &identifier, const T &default_value = {}, bool optional = false) {
-    return confuse_element(identifier, default_value, optional);
-}
+    template<typename T>
+    char* List<T>::default_value() {
+        return m_default_value_buf.get();
+    }
+
+    template<typename T>
+    void List<T>::swap(List& other) {
+        using std::swap;
+
+        swap((std::vector<T>&)*this, (std::vector<T>&)other);
+        swap(m_buffer_size, other.m_buffer_size);
+        swap(m_default_value_buf, other.m_default_value_buf);
+    }
+
+    template<typename T>
+    template<typename F>
+    void List<T>::update_list(cfg_t* parent, const std::string& identifier, F f) {
+        std::vector<T>::clear();
+        size_t number_of_elements = cfg_size(parent, identifier.c_str());
+        std::vector<T>::reserve(number_of_elements);
+        for (unsigned int i = 0; i < number_of_elements; ++i) {
+            std::vector<T>::push_back(f(parent, identifier.c_str(), i));
+        }
+    }
+
+    template<typename T>
+    Option<T>::Option(const std::string& identifier) : Element(identifier), m_has_default_value(false) {}
+
+    template<typename T>
+    Option<T>::Option(const Option<T>& element)
+        : Element(element), m_value(element.m_value), m_has_default_value(element.m_has_default_value) {}
+
+    template<typename T>
+    Option<T>::Option(Option<T>&& element)
+        :
+
+          Element(element),
+          m_value(std::move(element.m_value)),
+          m_has_default_value(std::move(element.m_has_default_value)) {}
+
+    template<>
+    inline cfg_opt_t Option<int>::get_confuse_representation() const {
+        cfg_opt_t tmp = CFG_INT(m_identifier.c_str(), m_value, m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT);
+        return tmp;
+    }
+
+    template<>
+    inline cfg_opt_t Option<float>::get_confuse_representation() const {
+        cfg_opt_t tmp = CFG_FLOAT(m_identifier.c_str(), m_value, m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT);
+        return tmp;
+    }
+
+    template<>
+    inline cfg_opt_t Option<bool>::get_confuse_representation() const {
+        cfg_opt_t tmp =
+            CFG_BOOL(m_identifier.c_str(), (cfg_bool_t)m_value, m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT);
+        return tmp;
+    }
+
+    template<>
+    inline cfg_opt_t Option<std::string>::get_confuse_representation() const {
+        cfg_opt_t tmp =
+            CFG_STR(m_identifier.c_str(), m_value.c_str(), m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT);
+        return tmp;
+    }
+
+    template<>
+    inline cfg_opt_t Option<List<int>>::get_confuse_representation() const {
+        cfg_opt_t tmp = CFG_INT_LIST(m_identifier.c_str(), m_value.default_value(),
+                                     (m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT) | CFGF_LIST);
+        return tmp;
+    }
+
+    template<>
+    inline cfg_opt_t Option<List<float>>::get_confuse_representation() const {
+        cfg_opt_t tmp = CFG_FLOAT_LIST(m_identifier.c_str(), m_value.default_value(),
+                                       (m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT) | CFGF_LIST);
+        return tmp;
+    }
+
+    template<>
+    inline cfg_opt_t Option<List<bool>>::get_confuse_representation() const {
+        cfg_opt_t tmp = CFG_BOOL_LIST(m_identifier.c_str(), m_value.default_value(),
+                                      (m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT) | CFGF_LIST);
+        return tmp;
+    }
+
+    template<>
+    inline cfg_opt_t Option<List<std::string>>::get_confuse_representation() const {
+        cfg_opt_t tmp = CFG_STR_LIST(m_identifier.c_str(), m_value.default_value(),
+                                     (m_has_default_value ? CFGF_NONE : CFGF_NODEFAULT) | CFGF_LIST);
+        return tmp;
+    }
+
+    template<typename T>
+    template<typename... Args>
+    const Option<T>& Option<T>::default_value(Args... args) {
+        m_has_default_value = true;
+        m_value = T(args...);
+
+        return *this;
+    }
+
+    template<>
+    inline const int& Option<int>::value() const {
+        if (m_parent && m_parent->section_handle()) {
+            m_value = cfg_getint(m_parent->section_handle(), m_identifier.c_str());
+        }
+        return m_value;
+    }
+
+    template<>
+    inline const float& Option<float>::value() const {
+        if (m_parent && m_parent->section_handle()) {
+            m_value = cfg_getfloat(m_parent->section_handle(), m_identifier.c_str());
+        }
+        return m_value;
+    }
+
+    template<>
+    inline const bool& Option<bool>::value() const {
+        if (m_parent && m_parent->section_handle()) {
+            m_value = cfg_getbool(m_parent->section_handle(), m_identifier.c_str());
+        }
+        return m_value;
+    }
+
+    template<>
+    inline const std::string& Option<std::string>::value() const {
+        if (m_parent && m_parent->section_handle()) {
+            m_value = cfg_getstr(m_parent->section_handle(), m_identifier.c_str());
+        }
+        return m_value;
+    }
+
+    template<>
+    inline const List<int>& Option<List<int>>::value() const {
+        m_value.update_list(m_parent->section_handle(), m_identifier, cfg_getnint);
+        return m_value;
+    }
+
+    template<>
+    inline const List<float>& Option<List<float>>::value() const {
+        m_value.update_list(m_parent->section_handle(), m_identifier, cfg_getnfloat);
+        return m_value;
+    }
+
+    template<>
+    inline const List<bool>& Option<List<bool>>::value() const {
+        m_value.update_list(m_parent->section_handle(), m_identifier, cfg_getnbool);
+        return m_value;
+    }
+
+    template<>
+    inline const List<std::string>& Option<List<std::string>>::value() const {
+        m_value.update_list(m_parent->section_handle(), m_identifier, cfg_getnstr);
+        return m_value;
+    }
+
+    template<typename T>
+    const T& Section::get(const std::string& identifier) const {
+        return std::get<T>(m_values.at(identifier));
+    }
+
+    template<typename... Args>
+    Section& Section::values(Args... args) {
+        m_values.clear();
+        add_children({args...});
+
+        return *this;
+    }
+
+    template<typename... Args>
+    Multisection& Multisection::values(Args... args) {
+        m_values = std::vector<variant_type>({args...});
+        for (auto& current_value : m_values) {
+            std::visit([this](auto& argument) { argument.parent(this); }, current_value);
+        }
+
+        return *this;
+    }
+
+}  // namespace confusepp
