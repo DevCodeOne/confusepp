@@ -17,7 +17,7 @@ int main() {
               Option<List<bool>>("bool_list"),
               Option<List<std::string>>("string_list").default_value("test, test", "test2")};
 
-    auto config = Config::parse_config("/examples/test.conf", root);
+    auto config = Config::parse_config("examples/example.conf", root);
 
     if (config) {
         std::cout << "Config is valid." << std::endl;
