@@ -6238,7 +6238,7 @@ namespace TestCaseTracking {
 
         void addInitialFilters( std::vector<std::string> const& filters ) {
             if( !filters.empty() ) {
-                m_filters.push_back(""); // Root - should never be consulted
+                m_filters.push_back(""); // ConfigFormat - should never be consulted
                 m_filters.push_back(""); // Test Case - not a section filter
                 m_filters.insert( m_filters.end(), filters.begin(), filters.end() );
             }

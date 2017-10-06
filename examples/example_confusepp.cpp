@@ -4,7 +4,7 @@
 
 int main() {
     using namespace confusepp;
-    Root root{Option<int>("int_value").default_value(0),
+    ConfigFormat format{Option<int>("int_value").default_value(0),
             Option<List<bool>>("bool_list").default_value(true, false),
               Section("string_section").values(Option<std::string>("string_identifier").default_value("test_string")),
               Section("int_section").values(
@@ -18,7 +18,7 @@ int main() {
               Option<List<bool>>("bool_list"),
               Option<List<std::string>>("string_list").default_value("test, test", "test2")};
 
-    auto config = Config::parse_config("examples/example.conf", root);
+    auto config = Config::parse_config("examples/example.conf", format);
 
     if (config) {
         std::cout << "Config is valid." << std::endl;

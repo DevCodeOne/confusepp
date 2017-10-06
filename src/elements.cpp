@@ -101,15 +101,15 @@ namespace confusepp {
         }
     }
 
-    Root::Root(const std::initializer_list<variant_type>& value_list) : Section("") { values(value_list); }
+    ConfigFormat::ConfigFormat(const std::initializer_list<variant_type>& value_list) : Section("") { values(value_list); }
 
-    Root::Root(const Root& root) : Section(root), m_section_handle(root.m_section_handle) {}
+    ConfigFormat::ConfigFormat(const ConfigFormat& root) : Section(root), m_section_handle(root.m_section_handle) {}
 
-    Root::Root(Root&& root) : Section(root), m_section_handle(root.m_section_handle) {}
+    ConfigFormat::ConfigFormat(ConfigFormat&& root) : Section(root), m_section_handle(root.m_section_handle) {}
 
-    void Root::config_handle(cfg_t* config_handle) { m_section_handle = config_handle; }
+    void ConfigFormat::config_handle(cfg_t* config_handle) { m_section_handle = config_handle; }
 
-    cfg_t* Root::section_handle() const { return m_section_handle; }
+    cfg_t* ConfigFormat::section_handle() const { return m_section_handle; }
 
     Multisection::Multisection(const std::string& identifier) : Element(identifier) {}
 
