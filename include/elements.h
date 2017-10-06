@@ -196,10 +196,14 @@ namespace confusepp {
         stream << "{";
         auto it = std::vector<T>::cbegin();
         while (it != std::vector<T>::cend()) {
-            if constexpr (std::is_same_v<T, std::decay_t<std::string>>) {
+            if constexpr (std::is_same_v<std::decay_t<T>, std::string>) {
                 stream << '\"' << *it << '\"';
             } else {
-                stream << *it;
+                if constexpr (std::is_same_v<std::decay_t<T>, bool>) {
+                    stream << (*it ? "true" : "false") << std::endl;
+                } else {
+                    stream << *it;
+                }
             }
 
             ++it;
