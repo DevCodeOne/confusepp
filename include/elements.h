@@ -133,15 +133,15 @@ namespace confusepp {
         friend class Multisection;
     };
 
-    class Root final : public Section {
+    class ConfigFormat final : public Section {
        public:
-        Root(const std::initializer_list<variant_type>& values);
-        Root(const Root& root);
-        Root(Root&& root);
-        virtual ~Root() = default;
+        ConfigFormat(const std::initializer_list<variant_type>& values);
+        ConfigFormat(const ConfigFormat& root);
+        ConfigFormat(ConfigFormat&& root);
+        virtual ~ConfigFormat() = default;
 
-        Root& operator=(const Root& root) = delete;
-        Root& operator=(Root&& root) = delete;
+        ConfigFormat& operator=(const ConfigFormat& root) = delete;
+        ConfigFormat& operator=(ConfigFormat&& root) = delete;
 
         explicit operator bool() const;
         void config_handle(cfg_t* config_handle);

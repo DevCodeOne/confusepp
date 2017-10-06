@@ -7,7 +7,7 @@
 //TODO Tests boolean List and default_value
 TEST_CASE("confusepp"){
     using namespace confusepp;
-    Root root{
+    ConfigFormat root{
             Option<List<int>>("lotto_numbers").default_value(42),
             Option<std::string>("target").default_value("World"),
             Option<std::string>("firstname").default_value("Hans"),
@@ -109,7 +109,7 @@ TEST_CASE("confusepp"){
 /*
 TEST_CASE("Confusepp"){
     using namespace confusepp;
-    Root root{Option<int>("int_value").default_value(0),
+    ConfigFormat root{Option<int>("int_value").default_value(0),
               Section("string_section").values(Option<std::string>("string_identifier").default_value("test_string")),
               Section("int_section").values(
                       Option<int>("int_one"),
