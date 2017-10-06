@@ -2,7 +2,7 @@
 
 #include <confuse.h>
 
-#include "confuse_elements.h"
+#include "elements.h"
 
 namespace confusepp {
 

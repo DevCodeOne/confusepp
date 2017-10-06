@@ -1,6 +1,6 @@
 #include <memory>
 
-#include "confuse_config.h"
+#include "config.h"
 
 namespace confusepp {
 
