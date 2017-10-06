@@ -1,4 +1,4 @@
-: [![Travis Status][]][Travis] 
+[![Travis Status][]][Travis] 
 
 [![Build Status](https://travis-ci.org/DevCodeOne/confusepp.svg?branch=master)](https://travis-ci.org/DevCodeOne/confusepp)
 
