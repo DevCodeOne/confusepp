@@ -5,6 +5,7 @@
 
 //TODO Tests with false arguments
 //TODO Tests boolean List and default_value
+//TODO remove unneccesary whitespaces in string for option name
 TEST_CASE("confusepp"){
     using namespace confusepp;
     ConfigFormat root{
@@ -19,6 +20,31 @@ TEST_CASE("confusepp"){
             Option<List<std::string>>("presidents").default_value("Abraham Lincoln"),
             Option<List<std::string>>("empty_string_list").default_value("I am empty"),
             Option<List<std::string>>("list with no default"),
+            Section("capital_of_states_in_germany").values(
+                    Option<std::string>("Baden-Württemberg"),
+                    Option<std::string>("Bavaria"),
+                    Option<std::string>("Berlin"),
+                    Option<std::string>("Brandenburg"),
+                    Option<std::string>("Bremen"),
+                    Option<std::string>("Hamburg"),
+                    Option<std::string>("Hesse"),
+                    Option<std::string>("Lower Saxony"),
+                    Option<std::string>("Mecklenburg-Vorpommern"),
+                    Option<std::string>("North Rhine-Westphalia"),
+                    Option<std::string>("Rhineland-Palatinate"),
+                    Option<std::string>("Saarland"),
+                    Option<std::string>("Saxony"),
+                    Option<std::string>("Saxony-Anhalt"),
+                    Option<std::string>("Schleswig-Holstein"),
+                    Option<std::string>("Thuringia")
+            ),
+            Multisection("person").values(
+                    Option<std::string>("firstname"),
+                    Option<std::string>("lastname"),
+                    Option<bool>("male"),
+                    Option<int>("age"),
+                    Option<float>("constant").default_value(.0f)
+            )
     };
 
     auto config = Config::parse_config("tests/tests.conf", root);
@@ -103,56 +129,44 @@ TEST_CASE("confusepp"){
             auto& string_list = root_node.get<Option<List<std::string>>>("list with no default").value();
             REQUIRE(string_list.size() == 0);
         }
+    }
 
+    SECTION("Section"){
+        auto &capitals = root_node.get<Section>("capital_of_states_in_germany");
+        REQUIRE(capitals.get<Option<std::string>>("Baden-Württemberg").value() == "Stuttgart");
+        REQUIRE(capitals.get<Option<std::string>>("Bavaria").value() == "Munich");
+        REQUIRE(capitals.get<Option<std::string>>("Berlin").value() == "Berlin");
+        REQUIRE(capitals.get<Option<std::string>>("Brandenburg").value() == "Potsdam");
+        REQUIRE(capitals.get<Option<std::string>>("Bremen").value() == "Bremen");
+        REQUIRE(capitals.get<Option<std::string>>("Hamburg").value() == "Hamburg");
+        REQUIRE(capitals.get<Option<std::string>>("Hesse").value() == "Wiesbaden");
+        REQUIRE(capitals.get<Option<std::string>>("Lower Saxony").value() == "Hanover");
+        REQUIRE(capitals.get<Option<std::string>>("Mecklenburg-Vorpommern").value() == "Schwerin");
+        REQUIRE(capitals.get<Option<std::string>>("North Rhine-Westphalia" ).value() == "Düsseldorf");
+        REQUIRE(capitals.get<Option<std::string>>("Rhineland-Palatinate").value() == "Mainz");
+        REQUIRE(capitals.get<Option<std::string>>("Saarland").value() == "Saarbrücken");
+        REQUIRE(capitals.get<Option<std::string>>("Saxony").value() == "Dresden");
+        REQUIRE(capitals.get<Option<std::string>>("Saxony-Anhalt").value() == "Magdeburg");
+        REQUIRE(capitals.get<Option<std::string>>("Schleswig-Holstein").value() == "Kiel");
+        REQUIRE(capitals.get<Option<std::string>>("Thuringia").value() == "Erfurt");
+    }
+
+    SECTION("Multisection"){
+        auto person = root_node.get<Multisection>("person")["euler"];
+
+        //REQUIRE(person);
+        REQUIRE(person->get<Option<std::string>>("firstname").value() == "Leonhard");
+        REQUIRE(person->get<Option<std::string>>("lastname").value() == "Euler");
+        REQUIRE(person->get<Option<bool>>("male").value() == true);
+        REQUIRE(person->get<Option<int>>("age").value() == 76);
+        REQUIRE(person->get<Option<float>>("constant").value() - 2.71828182845F <= FLT_EPSILON);
+
+        auto person2 = root_node.get<Multisection>("person")["turing"];
+
+        REQUIRE(person2->get<Option<std::string>>("firstname").value() == "Alan");
+        REQUIRE(person2->get<Option<std::string>>("lastname").value() == "Turing");
+        REQUIRE(person2->get<Option<bool>>("male").value() == true);
+        REQUIRE(person2->get<Option<int>>("age").value() == 41);
+        REQUIRE(person2->get<Option<float>>("constant").value() == 0 );
     }
 }
-/*
-TEST_CASE("Confusepp"){
-    using namespace confusepp;
-    ConfigFormat root{Option<int>("int_value").default_value(0),
-              Section("string_section").values(Option<std::string>("string_identifier").default_value("test_string")),
-              Section("int_section").values(
-                      Option<int>("int_one"),
-                      Option<int>("int_two"),
-                      Option<int>("int_three")
-              ).title("test"),
-              Multisection("multi").values(Option<std::string>("string_identifier")),
-              Option<List<int>>("int_list").default_value(42, 13),
-              Option<List<float>>("float_list"),
-              Option<List<bool>>("bool_list"),
-              Option<List<std::string>>("string_list").default_value("test, test", "test2")};
-
-    auto config = Config::parse_config("tests/tests.conf", root);
-
-    SECTION("Config is Valid") {
-        REQUIRE(config.has_value());
-    }
-
-    auto &root_node = config->root_node();
-
-    SECTION("int Option") {
-        int i = root_node.get<Option<int>>("int_value").value();
-        REQUIRE(i == 10);
-    }
-
-    SECTION("string Section") {
-        auto& string_section = root_node.get<Section>("string_section");
-        std::string s =  string_section.get<Option<std::string>>("string_identifier").value();
-        REQUIRE(s == "Hello world");
-    }
-
-    SECTION("multi title") {
-        auto multi_title = root_node.get<Multisection>("multi")["title"];
-        REQUIRE(multi_title.has_value());
-        auto multi = multi_title->get<Option<std::string>>("string_identifier").value();
-        REQUIRE(multi)
-            std::cout << multi_title->get<Option<std::string>>("string_identifier").value() << std::endl;
-
-    }
-    auto &string_data = root_node.get<Option<List<std::string>>>("string_list").value();
-
-    for (const auto &current_value : string_data) {
-        std::cout << current_value << " ";
-    }
-    std::cout << std::endl;
-}*/

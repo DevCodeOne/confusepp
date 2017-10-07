@@ -9,7 +9,7 @@ include_directories(include)
 file(GLOB SOURCES "src/*cpp" "include/*h")
 configure_file(examples/example.conf examples/example.conf)
 
-find_package(Confuse)
+find_package(Confuse REQUIRED)
 
 include_directories(${CONFUSE_INCLUDE_DIR})
 
