@@ -4,12 +4,12 @@
 
 namespace confusepp {
 
-    std::optional<Config> Config::parse_config(const std::string& filename, ConfigFormat root) {
-        std::unique_ptr<FILE, decltype(&std::fclose)> config_file(std::fopen(filename.c_str(), "r"), &std::fclose);
+    std::optional<Config> Config::parse(const std::experimental::filesystem::path& config_path, ConfigFormat root) {
+        std::unique_ptr<FILE, decltype(&std::fclose)> config_file(std::fopen(config_path.c_str(), "r"), &std::fclose);
 
         if (config_file) {
             Config config(std::move(root));
-            cfg_opt_t config_structure = config.root_node().get_confuse_representation(config.m_opt_storage);
+            cfg_opt_t config_structure = config.m_config_tree.get_confuse_representation(config.m_opt_storage);
             cfg_t* config_handle = cfg_init(config_structure.subopts, CFGF_NONE);
 
             if (config_handle && cfg_parse_fp(config_handle, config_file.get()) == CFG_SUCCESS) {
@@ -22,7 +22,8 @@ namespace confusepp {
     }
 
     Config::Config(ConfigFormat config_tree, cfg_t* config_handle)
-        : m_config_handle(config_handle), m_config_tree(std::move(config_tree)) {}
+        : m_config_handle(config_handle), m_config_tree(std::move(config_tree)) {
+    }
 
     Config::Config(Config&& config)
         : m_config_handle(std::move(config.m_config_handle)),
@@ -37,14 +38,9 @@ namespace confusepp {
         }
     }
 
-    void Config::config_handle(cfg_t* config_handle) {
-        m_config_handle = config_handle;
-        m_config_tree.config_handle(m_config_handle);
+    void Config::config_handle(cfg_t *handle) {
+        m_config_handle = handle;
+        m_config_tree.load(m_config_handle);
     }
 
-    const ConfigFormat& Config::root_node() const { return m_config_tree; }
-
-    const cfg_t* Config::config_handle() const { return m_config_handle; }
-
-    cfg_t* Config::config_handle() { return m_config_handle; }
 }  // namespace confusepp

@@ -18,6 +18,8 @@ add_executable(example_confusepp examples/example_confusepp.cpp)
 
 target_link_libraries(confusepp ${CONFUSE_LIBRARIES})
 target_link_libraries(example_confusepp confusepp)
+# For std::experimental::filesystem otherwise there are linker errors
+target_link_libraries(confusepp stdc++fs)
 
 enable_testing()
 configure_file(tests/tests.conf tests/tests.conf)
