@@ -1,4 +1,4 @@
 #pragma once
 
-#include "confuse_config.h"
-#include "confuse_elements.h"
+#include "config.h"
+#include "elements.h"

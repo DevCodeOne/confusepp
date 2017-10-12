@@ -1,0 +1,23 @@
+dist: trusty
+sudo: false
+language: cpp
+
+before_install:
+  - wget http://de.archive.ubuntu.com/ubuntu/pool/universe/c/confuse/libconfuse-common_3.2+really3.0+dfsg-1_all.deb
+  - sudo dpkg -i libconfuse-common_3.2+really3.0+dfsg-1_all.deb
+  - wget http://de.archive.ubuntu.com/ubuntu/pool/universe/c/confuse/libconfuse1_3.2+really3.0+dfsg-1_amd64.deb
+  - sudo dpkg -i libconfuse1_3.2+really3.0+dfsg-1_amd64.deb
+  - wget http://de.archive.ubuntu.com/ubuntu/pool/universe/c/confuse/libconfuse-dev_3.2+really3.0+dfsg-1_amd64.deb
+  - sudo dpkg -i libconfuse-dev_3.2+really3.0+dfsg-1_amd64.deb
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-7
+
+script:
+  - CXX=/usr/bin/g++-7 CC=/usr/bin/gcc-7 cmake .
+  - cmake --build . -- -j2
+  - ctest -j2
