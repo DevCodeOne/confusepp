@@ -3,7 +3,7 @@ project(confusepp C CXX)
 set(EXECUTABLE_BUILD_TYPE Debug)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 add_compile_options(-Wall -Wextra -Wpedantic)
--add_definitions(-std=c++1z)
+add_definitions(-std=c++1z)
 
 file(GLOB SOURCES "src/*cpp")
 add_library(confusepp ${SOURCES})
