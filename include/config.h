@@ -20,7 +20,7 @@ namespace confusepp {
 
         static std::optional<Config> parse(const std::experimental::filesystem::path& config_file, ConfigFormat root);
         template<typename T>
-        std::optional<T> get(const std::experimental::filesystem::path& element_path);
+        std::optional<T> get(const std::experimental::filesystem::path& element_path) const;
 
        private:
         Config(ConfigFormat config_tree, cfg_t* config_handle = nullptr);
@@ -33,8 +33,8 @@ namespace confusepp {
     };
 
     template<typename T>
-    std::optional<T> Config::get(const std::experimental::filesystem::path& element_path) {
-        Section& sec(m_config_tree);
+    std::optional<T> Config::get(const std::experimental::filesystem::path& element_path) const {
+        const Section& sec(m_config_tree);
         std::optional<ConfigFormat::variant_type> current(sec);
 
         for (auto it = element_path.begin(); it != element_path.end(); ++it) {
