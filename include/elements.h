@@ -15,17 +15,20 @@
 namespace confusepp {
 
     template<typename T>
-    class Option;
-    class Section;
-    class Multisection;
+    class Option; /**< Forwarddeclaration */
+    class Section; /**< Forwarddeclaration */
+    class Multisection; /**< Forwarddeclaration */
 
+    /// Generic Container
     template<typename T>
     class List final : public std::vector<T> {
        public:
+
+        /// Contructor for List with Args
         template<typename... Args>
         List(Args... args);
-        List(const List& list);
-        List(List&& list);
+        List(const List& list); /**< Copyconstructor */
+        List(List&& list); /**< Moveconstructor */
         virtual ~List() = default;
 
         List& operator=(List list);
