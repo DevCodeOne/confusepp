@@ -8,16 +8,24 @@
 #include "elements.h"
 
 namespace confusepp {
-
+    /**
+     * @brief The Config class which provides the content of the ConfigFile
+     */
     class Config {
        public:
-        Config(Config& config) = delete;
-        Config(Config&& config);
+        Config(Config& config) = delete; /**< no copy constructable allowed */
+        Config(Config&& config); /**< move constructable allowed */
         ~Config();
 
-        Config& operator=(const Config& config) = delete;
-        Config& operator=(Config&& config) = delete;
+        Config& operator=(const Config& config) = delete; /**< no copy asignment */
+        Config& operator=(Config&& config) = delete; /**< no move asignment */
 
+        /**
+         * @brief parse-method which creats the config_tree from the config_file
+         * @param config_file File which provides the config
+         * @param root root-element of the config_tree
+         * @return Empty or filled Config-Instance
+         */
         static std::optional<Config> parse(const std::experimental::filesystem::path& config_file, ConfigFormat root);
         template<typename T>
         std::optional<T> get(const std::experimental::filesystem::path& element_path) const;
