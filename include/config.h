@@ -54,7 +54,7 @@ namespace confusepp {
          * @brief m_valid runtime check for config tree
          */
         bool m_valid = false;
-        cfg_t* m_config_handle;        
+        cfg_t* m_config_handle;
         ConfigFormat m_config_tree;
         /**
          * @brief m_opt_storage Storage for the confuse representation
