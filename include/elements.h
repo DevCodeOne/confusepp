@@ -19,13 +19,20 @@ namespace confusepp {
     class Section; /**< Forwarddeclaration */
     class Multisection; /**< Forwarddeclaration */
 
-    /// Generic Container
+
     template<typename T>
+    /**
+     * @brief The List class
+     */
     class List final : public std::vector<T> {
        public:
 
-        /// Contructor for List with Args
+
         template<typename... Args>
+        /**
+         * @brief List A generic list of same types
+         * @param args Arguments form List<T>
+         */
         List(Args... args);
         List(const List& list); /**< Copyconstructor */
         List(List&& list); /**< Moveconstructor */
@@ -39,6 +46,12 @@ namespace confusepp {
 
        private:
         template<typename F>
+        /**
+         * @brief Method that updates the list
+         * @param parent section which contains this list
+         * @param identifier Identifier of the list
+         * @param f Function to update the confuselist
+         */
         void update_list(cfg_t* parent, const std::string& identifier, F f);
 
         size_t m_buffer_size = 0;
@@ -48,6 +61,9 @@ namespace confusepp {
         friend class Option;
     };
 
+    /**
+     * @brief The Element class
+     */
     class Element {
        public:
         Element(const std::string& identifier);
@@ -60,6 +76,9 @@ namespace confusepp {
     };
 
     template<typename T>
+    /**
+     * @brief The Option class leaf representation
+     */
     class Option final : public Element {
        public:
         Option(const std::string& identifier);
@@ -146,6 +165,10 @@ namespace confusepp {
         ConfigFormat(const std::initializer_list<variant_type>& values);
         virtual ~ConfigFormat() = default;
 
+        /**
+         * @brief load the values from the config with the confuse handle into the tree representation
+         * @param parent_handle handle of the current top node
+         */
         void load(cfg_t* parent_handle) override;
 
        private:
