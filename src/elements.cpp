@@ -114,6 +114,17 @@ namespace confusepp {
         return {};
     }
 
+    std::vector<Section> Multisection::sections() const {
+        std::vector<Section> ret;
+        ret.reserve(m_sections.size());
+
+        for (auto it : m_sections) {
+            ret.emplace_back(it.second);
+        }
+
+        return ret;
+    }
+
     cfg_opt_t Multisection::get_confuse_representation(option_storage& opt_storage) const {
         opt_storage.emplace_back(std::make_unique<cfg_opt_t[]>(m_values.size() + 1));
         size_t storage_entry = opt_storage.size() - 1;

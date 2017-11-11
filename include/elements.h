@@ -144,6 +144,7 @@ namespace confusepp {
         virtual ~Multisection() = default;
 
         std::optional<Section> operator[](const std::string& title) const;
+        std::vector<Section> sections() const;
         template<typename... Args>
         Multisection& values(Args... args);
 
