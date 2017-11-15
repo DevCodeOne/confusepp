@@ -15,10 +15,9 @@
 namespace confusepp {
 
     template<typename T>
-    class Option; /**< Forwarddeclaration */
-    class Section; /**< Forwarddeclaration */
+    class Option;       /**< Forwarddeclaration */
+    class Section;      /**< Forwarddeclaration */
     class Multisection; /**< Forwarddeclaration */
-
 
     template<typename T>
     /**
@@ -26,8 +25,6 @@ namespace confusepp {
      */
     class List final : public std::vector<T> {
        public:
-
-
         template<typename... Args>
         /**
          * @brief List A generic list of same types
@@ -35,7 +32,7 @@ namespace confusepp {
          */
         List(Args... args);
         List(const List& list); /**< Copyconstructor */
-        List(List&& list); /**< Moveconstructor */
+        List(List&& list);      /**< Moveconstructor */
         virtual ~List() = default;
 
         List& operator=(List list);
@@ -75,6 +72,23 @@ namespace confusepp {
         std::string m_identifier;
     };
 
+    class Function final : public Element {
+       public:
+        Function(const std::string& identifier, cfg_func_t function);
+        virtual ~Function() = default;
+
+        void load(cfg_t *parent_handle);
+
+       private:
+        cfg_opt_t get_confuse_representation() const;
+
+        cfg_func_t m_function;
+
+        friend class Section;
+        friend class Multisection;
+        friend class ConfigFormat;
+    };
+
     template<typename T>
     /**
      * @brief The Option class leaf representation
@@ -103,9 +117,9 @@ namespace confusepp {
 
     class Section : public Element {
        public:
-        using variant_type =
-            std::variant<Section, Multisection, Option<int>, Option<float>, Option<bool>, Option<std::string>,
-                         Option<List<int>>, Option<List<float>>, Option<List<bool>>, Option<List<std::string>>>;
+        using variant_type = std::variant<Section, Multisection, Option<int>, Option<float>, Option<bool>,
+                                          Option<std::string>, Option<List<int>>, Option<List<float>>,
+                                          Option<List<bool>>, Option<List<std::string>>, Function>;
         using option_storage = std::vector<std::unique_ptr<cfg_opt_t[]>>;
 
         Section(const std::string& identifier);
@@ -133,6 +147,7 @@ namespace confusepp {
         friend class Option;
         friend class Multisection;
         friend class ConfigFormat;
+        friend class Config;
     };
 
     class Multisection final : public Element {

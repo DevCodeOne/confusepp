@@ -10,6 +10,17 @@ namespace confusepp {
 
     const std::string& Element::identifier() const { return m_identifier; }
 
+    Function::Function(const std::string& identifier, cfg_func_t function)
+        : Element(identifier), m_function(function) {}
+
+    void Function::load(cfg_t *) { }
+
+    cfg_opt_t Function::get_confuse_representation() const {
+        cfg_opt_t ret = CFG_FUNC(identifier().c_str(), m_function);
+
+        return ret;
+    }
+
     Section::Section(const std::string& identifier) : Element(identifier) {}
 
     std::optional<Section::variant_type> Section::operator[](const std::string& identifier) const {
