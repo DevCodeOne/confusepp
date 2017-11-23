@@ -4,7 +4,7 @@
 
 namespace confusepp {
 
-    std::optional<Config> Config::parse(const std::experimental::filesystem::path& config_path, ConfigFormat root) {
+    std::optional<Config> Config::parse(const path& config_path, ConfigFormat root) {
         std::unique_ptr<FILE, decltype(&std::fclose)> config_file(std::fopen(config_path.c_str(), "r"), &std::fclose);
 
         if (config_file) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <experimental/filesystem>
 #include <memory>
 #include <optional>
 #include <type_traits>
@@ -8,17 +9,20 @@
 #include "elements.h"
 
 namespace confusepp {
+
+    using path = std::experimental::filesystem::path;
+
     /**
      * @brief The Config class which provides the content of the ConfigFile
      */
-    class Config {
+    class Config final {
        public:
         Config(Config& config) = delete; /**< no copy constructable allowed */
-        Config(Config&& config); /**< move constructable allowed */
+        Config(Config&& config);         /**< move constructable allowed */
         ~Config();
 
         Config& operator=(const Config& config) = delete; /**< no copy asignment */
-        Config& operator=(Config&& config) = delete; /**< no move asignment */
+        Config& operator=(Config&& config) = delete;      /**< no move asignment */
 
         /**
          * @brief Parse-method which creats the config_tree from the config_file
@@ -26,7 +30,7 @@ namespace confusepp {
          * @param root root-element of the config_tree
          * @return Empty or filled Config-Instance
          */
-        static std::optional<Config> parse(const std::experimental::filesystem::path& config_file, ConfigFormat root);
+        static std::optional<Config> parse(const path& config_file, ConfigFormat root);
 
         template<typename T>
         /**
@@ -34,7 +38,7 @@ namespace confusepp {
          * @param element_path of the element
          * @return Element at the specified path
          */
-        std::optional<T> get(const std::experimental::filesystem::path& element_path) const;
+        std::optional<T> get(const path& element_path) const;
 
        private:
         /**
@@ -63,7 +67,7 @@ namespace confusepp {
     };
 
     template<typename T>
-    std::optional<T> Config::get(const std::experimental::filesystem::path& element_path) const {
+    std::optional<T> Config::get(const path& element_path) const {
         const Section& sec(m_config_tree);
         std::optional<ConfigFormat::variant_type> current(sec);
 

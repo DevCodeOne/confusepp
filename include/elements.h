@@ -2,7 +2,6 @@
 
 #include <cstring>
 
-#include <experimental/filesystem>
 #include <map>
 #include <memory>
 #include <sstream>
