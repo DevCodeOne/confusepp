@@ -121,33 +121,48 @@ TEST_CASE("confusepp") {
     SECTION("Section") {
         path p("capital_of_states_in_germany");
 
-        auto capitals = *config->get<Section>(p);
+        auto capitals = config->get<Section>(p);
 
+        REQUIRE(capitals);
         REQUIRE(config->get<Option<std::string>>(p / "Baden-Württemberg")->value() == "Stuttgart");
-        REQUIRE(config->get<Option<std::string>>(p / "Bavaria")->value() == "Munich");
-        REQUIRE(config->get<Option<std::string>>(p / "Berlin")->value() == "Berlin");
-        REQUIRE(config->get<Option<std::string>>(p / "Brandenburg")->value() == "Potsdam");
-        REQUIRE(config->get<Option<std::string>>(p / "Bremen")->value() == "Bremen");
-        REQUIRE(config->get<Option<std::string>>(p / "Hamburg")->value() == "Hamburg");
-        REQUIRE(config->get<Option<std::string>>(p / "Hesse")->value() == "Wiesbaden");
-        REQUIRE(config->get<Option<std::string>>(p / "Lower Saxony")->value() == "Hanover");
-        REQUIRE(config->get<Option<std::string>>(p / "Mecklenburg-Vorpommern")->value() == "Schwerin");
-        REQUIRE(config->get<Option<std::string>>(p / "North Rhine-Westphalia")->value() == "Düsseldorf");
-        REQUIRE(config->get<Option<std::string>>(p / "Rhineland-Palatinate")->value() == "Mainz");
-        REQUIRE(config->get<Option<std::string>>(p / "Saarland")->value() == "Saarbrücken");
-        REQUIRE(config->get<Option<std::string>>(p / "Saxony")->value() == "Dresden");
-        REQUIRE(config->get<Option<std::string>>(p / "Saxony-Anhalt")->value() == "Magdeburg");
-        REQUIRE(config->get<Option<std::string>>(p / "Schleswig-Holstein")->value() == "Kiel");
-        REQUIRE(config->get<Option<std::string>>(p / "Thuringia")->value() == "Erfurt");
+        REQUIRE(capitals->get<Option<std::string>>("Baden-Württemberg")->value() == "Stuttgart");
+        REQUIRE(capitals->get<Option<std::string>>("Bavaria")->value() == "Munich");
+        REQUIRE(capitals->get<Option<std::string>>("Berlin")->value() == "Berlin");
+        REQUIRE(capitals->get<Option<std::string>>("Brandenburg")->value() == "Potsdam");
+        REQUIRE(capitals->get<Option<std::string>>("Bremen")->value() == "Bremen");
+        REQUIRE(capitals->get<Option<std::string>>("Hamburg")->value() == "Hamburg");
+        REQUIRE(capitals->get<Option<std::string>>("Hesse")->value() == "Wiesbaden");
+        REQUIRE(capitals->get<Option<std::string>>("Lower Saxony")->value() == "Hanover");
+        REQUIRE(capitals->get<Option<std::string>>("Mecklenburg-Vorpommern")->value() == "Schwerin");
+        REQUIRE(capitals->get<Option<std::string>>("North Rhine-Westphalia")->value() == "Düsseldorf");
+        REQUIRE(capitals->get<Option<std::string>>("Rhineland-Palatinate")->value() == "Mainz");
+        REQUIRE(capitals->get<Option<std::string>>("Saarland")->value() == "Saarbrücken");
+        REQUIRE(capitals->get<Option<std::string>>("Saxony")->value() == "Dresden");
+        REQUIRE(capitals->get<Option<std::string>>("Saxony-Anhalt")->value() == "Magdeburg");
+        REQUIRE(capitals->get<Option<std::string>>("Schleswig-Holstein")->value() == "Kiel");
+        REQUIRE(capitals->get<Option<std::string>>("Thuringia")->value() == "Erfurt");
     }
 
     SECTION("Multisection") {
         path p("person/euler");
-        auto person = config->get<Section>("person/euler");
+        auto person = config->get<Section>(p);
 
-        // REQUIRE(person);
+        std::optional<Multisection> sections = config->get<Multisection>("person");
+
+        REQUIRE(config->get<Multisection>("person"));
+        REQUIRE(config->get<Multisection>("/person"));
+        REQUIRE(config->get<Multisection>("person/"));
+        REQUIRE(config->get<Multisection>("/person/"));
+        REQUIRE(!config->get<Multisection>("//"));
+
+        REQUIRE(sections->get<Section>("euler"));
+        REQUIRE(sections->get<Section>("euler/"));
+        REQUIRE(sections->get<Section>("/euler"));
+        REQUIRE(sections->get<Section>("/euler/"));
+        REQUIRE(!sections->get<Section>("//"));
+        REQUIRE(person);
         REQUIRE(person->get<Option<std::string>>("firstname")->value() == "Leonhard");
-        REQUIRE(person->get<Option<std::string>>("lastname")->value() == "Euler");
+        REQUIRE(config->get<Option<std::string>>("person/euler/lastname")->value() == "Euler");
         REQUIRE(person->get<Option<bool>>("male")->value() == true);
         REQUIRE(person->get<Option<int>>("age")->value() == 76);
         REQUIRE(person->get<Option<float>>("constant")->value() - 2.71828182845F <= FLT_EPSILON);

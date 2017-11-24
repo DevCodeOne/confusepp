@@ -1,6 +1,5 @@
 #pragma once
 
-#include <experimental/filesystem>
 #include <memory>
 #include <optional>
 #include <type_traits>
@@ -9,8 +8,6 @@
 #include "elements.h"
 
 namespace confusepp {
-
-    using path = std::experimental::filesystem::path;
 
     /**
      * @brief The Config class which provides the content of the ConfigFile
@@ -68,39 +65,6 @@ namespace confusepp {
 
     template<typename T>
     std::optional<T> Config::get(const path& element_path) const {
-        const Section& sec(m_config_tree);
-        std::optional<ConfigFormat::variant_type> current(sec);
-
-        for (auto it = element_path.begin(); it != element_path.end(); ++it) {
-            if (current) {
-                std::visit(
-                    [&](auto& parent_element) {
-                        using current_type = std::decay_t<decltype(parent_element)>;
-
-                        if constexpr (std::is_same_v<Section, current_type> ||
-                                      std::is_same_v<Multisection, current_type>) {
-                            auto next = parent_element[std::string(it->c_str())];
-
-                            if (next) {
-                                current = *next;
-                            } else {
-                                current = std::optional<T>{};
-                            }
-                        } else {
-                            current = std::optional<T>{};
-                        }
-                    },
-                    *current);
-            }
-            if (!current) {
-                return std::optional<T>{};
-            }
-        }
-
-        if (std::holds_alternative<T>(*current)) {
-            return std::get<T>(*current);
-        }
-
-        return std::optional<T>{};
+        return m_config_tree.get<T>(element_path);
     }
 }  // namespace confusepp

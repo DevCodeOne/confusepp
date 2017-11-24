@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include <experimental/filesystem>
 #include <map>
 #include <memory>
 #include <sstream>
@@ -12,6 +13,8 @@
 #include <confuse.h>
 
 namespace confusepp {
+
+    using path = std::experimental::filesystem::path;
 
     template<typename T>
     class Option;       /**< Forwarddeclaration */
@@ -76,7 +79,7 @@ namespace confusepp {
         Function(const std::string& identifier, cfg_func_t function);
         virtual ~Function() = default;
 
-        void load(cfg_t *parent_handle);
+        void load(cfg_t* parent_handle);
 
        private:
         cfg_opt_t get_confuse_representation() const;
@@ -125,7 +128,7 @@ namespace confusepp {
         virtual ~Section() = default;
 
         template<typename T>
-        std::optional<T> get(const std::string& identifier) const;
+        std::optional<T> get(const path& element_path) const;
         std::optional<variant_type> operator[](const std::string& identifier) const;
         const std::string& title() const;
         template<typename... Args>
@@ -137,10 +140,12 @@ namespace confusepp {
         virtual void load(cfg_t* parent_handle);
 
        private:
+        template<typename T>
+        std::optional<T> get(path::iterator begin, path::iterator end) const;
+        void add_children(std::vector<variant_type> values);
+
         std::map<std::string, variant_type> m_values;
         std::string m_title;
-
-        void add_children(std::vector<variant_type> values);
 
         template<typename T>
         friend class Option;
@@ -157,12 +162,16 @@ namespace confusepp {
         Multisection(const std::string& identifier);
         virtual ~Multisection() = default;
 
+        template<typename T>
+        std::optional<T> get(const path& element_path) const;
         std::optional<Section> operator[](const std::string& title) const;
         std::vector<Section> sections() const;
         template<typename... Args>
         Multisection& values(Args... args);
 
        private:
+        template<typename T>
+        std::optional<T> get(path::iterator begin, path::iterator end) const;
         cfg_opt_t get_confuse_representation(option_storage& opt_storage) const;
         void load(cfg_t* parent_handle);
 
@@ -423,11 +432,53 @@ namespace confusepp {
     }
 
     template<typename T>
-    std::optional<T> Section::get(const std::string& identifier) const {
-        if (auto value = m_values.find(identifier); value != m_values.cend()) {
-            return std::optional<T>{std::get<T>(value->second)};
+    std::optional<T> Section::get(const path& element_path) const {
+        if (element_path.empty()) {
+            return {};
         }
-        return {};
+
+        auto start = element_path.begin(), end = element_path.end();
+        std::string path = element_path.c_str();
+
+        if (path[0] == '/') {
+            ++start;
+        }
+
+        if (path.size() > 1 && path[path.size() - 1] == '/') {
+            --end;
+        }
+
+        return get<T>(start, end);
+    }
+
+    template<typename T>
+    std::optional<T> Section::get(path::iterator current, path::iterator end) const {
+        auto next_element = m_values.find(current->c_str());
+        ++current;
+
+        if (next_element == m_values.cend()) {
+            return {};
+        }
+
+        if (current == end) {
+            if (!std::holds_alternative<T>(next_element->second)) {
+                return {};
+            }
+
+            return std::optional<T>(std::get<T>(next_element->second));
+        }
+
+        return std::visit(
+            [&current, &end](auto& child) -> std::optional<T> {
+                using current_type = std::decay_t<decltype(child)>;
+
+                if constexpr (std::is_same_v<Section, current_type> || std::is_same_v<Multisection, current_type>) {
+                    return child.template get<T>(current, end);
+                } else {
+                    return std::optional<T>{};
+                }
+            },
+            next_element->second);
     }
 
     template<typename... Args>
@@ -442,6 +493,45 @@ namespace confusepp {
     Multisection& Multisection::values(Args... args) {
         m_values = std::vector<variant_type>({args...});
         return *this;
+    }
+
+    template<typename T>
+    std::optional<T> Multisection::get(const path& element_path) const {
+        if (element_path.empty()) {
+            return {};
+        }
+
+        auto start = element_path.begin(), end = element_path.end();
+        std::string path = element_path.c_str();
+
+        if (path[0] == '/') {
+            ++start;
+        }
+
+        if (path.size() > 1 && path[path.size() - 1] == '/') {
+            --end;
+        }
+
+        return get<T>(start, end);
+    }
+
+    template<typename T>
+    std::optional<T> Multisection::get(path::iterator current, path::iterator end) const {
+        auto next_element = m_sections.find(current->c_str());
+        ++current;
+
+        if (next_element == m_sections.cend()) {
+            return {};
+        }
+
+        if (current == end) {
+            if constexpr (std::is_same_v<Section, std::decay_t<T>>) {
+                return std::optional<T>(next_element->second);
+            }
+            return {};
+        }
+
+        return std::optional<T>(next_element->second.get<T>(current, end));
     }
 
 }  // namespace confusepp
