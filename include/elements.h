@@ -394,7 +394,12 @@ namespace confusepp {
     template<>
     inline const std::string& Option<std::string>::value(cfg_t* parent_handle) const {
         if (parent_handle) {
-            m_value = cfg_getstr(parent_handle, identifier().c_str());
+            const char *str = cfg_getstr(parent_handle, identifier().c_str());
+            if (str) {
+                m_value = str;
+            } else {
+                m_value = "";
+            }
         }
         return m_value;
     }
