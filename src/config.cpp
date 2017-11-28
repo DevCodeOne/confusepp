@@ -6,11 +6,14 @@ namespace confusepp {
 
     std::optional<Config> Config::parse(const path& config_path, ConfigFormat root) {
         std::unique_ptr<FILE, decltype(&std::fclose)> config_file(std::fopen(config_path.c_str(), "r"), &std::fclose);
+        auto directory = config_path;
+        directory.remove_filename();
 
         if (config_file) {
             Config config(std::move(root));
             cfg_opt_t config_structure = config.m_config_tree.get_confuse_representation(config.m_opt_storage);
             cfg_t* config_handle = cfg_init(config_structure.subopts, CFGF_NONE);
+            cfg_add_searchpath(config_handle, directory.c_str());
 
             if (config_handle && cfg_parse_fp(config_handle, config_file.get()) == CFG_SUCCESS) {
                 config.config_handle(config_handle);
